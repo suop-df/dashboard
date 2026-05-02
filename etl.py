@@ -63,6 +63,11 @@ QUERIES = [
         "sql_file": "restos_a_pagar.sql",
         "transform": "restos_a_pagar",
     },
+    {
+        "file": "resultado_primario_nominal.json",
+        "sql_file": "resultado_primario_nominal.sql",
+        "transform": "resultado_primario_nominal",
+    },
 ]
 
 
@@ -128,6 +133,31 @@ def resolve_query(item):
 
 FCDF_CLASS6_CONTAS = {622130300, 622130400, 622130500, 622130600, 622130700}
 
+# RREO Anexo 06 — Juros Ativos (XXXVI) e Passivos (XXXVII)
+_XXXVI_CC5 = {
+    "44121","44123","44124","44125","44131","44133","44134","44135","44141",
+    "44211","44213","44214","44215","44221","44261","44263","44264","44265",
+    "44511","44521","44611","44613","44614","44615","44621","44623","44624","44625",
+}
+_XXXVI_CC7 = {
+    "4411199","4431101","4431199","4431301","4431401","4431501",
+    "4432101","4433101","4433199","4433301","4433401","4433501",
+    "4434101","4435101","4435301","4435401","4435501",
+}
+_XXXVI_FULL = {"443910170", "443930170", "443930171"}
+
+_XXXVII_CC5 = {
+    "34111","34113","34114","34115","34121","34131","34133","34134","34135","34141",
+    "34181","34183","34184","34185","34191","34211","34213","34214","34215","34221",
+    "34261","34263","34264","34265","34511","34521","34611","34613","34614","34615",
+    "34911","34913","34914","34915",
+}
+_XXXVII_CC7 = {
+    "3425202","3431101","3431301","3431401","3431501","3432101","3433101",
+    "3433301","3433401","3433501","3434101","3435101","3435301","3435401","3435501",
+}
+_XXXVII_FULL = {"343910170", "343930170", "343930171"}
+
 
 def _rcl_class_orc(c, cofonte, cofontefederal):
     if 11125000 <= c <= 11125099: return "iptu"
@@ -162,6 +192,14 @@ def _rcl_deducao(c):
     if 13210400 <= c <= 13210499: return "rend_prev"
     if 17515000 <= c <= 17515099: return "ded_fundeb"
     return None
+
+
+def _is_xxxvi(cc):
+    return cc[:5] in _XXXVI_CC5 or cc[:7] in _XXXVI_CC7 or cc in _XXXVI_FULL
+
+
+def _is_xxxvii(cc):
+    return cc[:5] in _XXXVII_CC5 or cc[:7] in _XXXVII_CC7 or cc in _XXXVII_FULL
 
 
 def _rcl_emenda(cofonte, cofontefederal):
@@ -629,6 +667,24 @@ def upsert_despesa_supabase(data):
         log.error(f"  Supabase despesa falhou: {type(e).__name__}: {e}")
 
 
+def upsert_resultado_primario_nominal_supabase(D_obj):
+    """Envia resultado_primario_nominal para o Supabase como JSONB (1 linha por ano)."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        log.warning("  Supabase: nao configurado. Pulando upsert resultado_primario_nominal.")
+        return
+    try:
+        ano = datetime.now().year
+        payload = [{
+            "ano":           ano,
+            "dados":         D_obj,
+            "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        }]
+        total = _supabase_upsert("resultado_primario_nominal", payload, "ano")
+        log.info(f"  Supabase: resultado_primario_nominal {ano} enviada ({total} linha).")
+    except Exception as e:
+        log.error(f"  Supabase resultado_primario_nominal falhou: {type(e).__name__}: {e}")
+
+
 def upsert_rcl_supabase(D_obj):
     """Envia RCL para o Supabase como JSONB (1 linha por ano)."""
     if not SUPABASE_URL or not SUPABASE_KEY:
@@ -660,6 +716,17 @@ def save_restos_a_pagar_gz(registros):
     log.info(f"  restos_a_pagar.json.gz -- {len(registros)} registros, {size_kb:.1f} KB")
 
 
+def save_resultado_primario_nominal_gz(D_obj):
+    payload = {"atualizado_em": datetime.now(timezone.utc).isoformat()}
+    payload.update(D_obj)
+    content = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    gz_path = GZ_DIR / "resultado_primario_nominal.json.gz"
+    with gzip.open(gz_path, "wb", compresslevel=9) as f:
+        f.write(content)
+    size_kb = gz_path.stat().st_size / 1024
+    log.info(f"  resultado_primario_nominal.json.gz -- {size_kb:.1f} KB")
+
+
 def save_rcl_gz(D_obj):
     content = json.dumps(D_obj, ensure_ascii=False, separators=(",",":")).encode("utf-8")
     gz_path = GZ_DIR / "rcl.json.gz"
@@ -667,6 +734,231 @@ def save_rcl_gz(D_obj):
         f.write(content)
     size_kb = gz_path.stat().st_size / 1024
     log.info(f"  rcl.json.gz -- {len(D_obj.get('colunas', []))} meses, {size_kb:.1f} KB")
+
+
+def build_resultado_primario_nominal_data(rows):
+    """
+    Computa o RREO Anexo 06 (Acima da Linha) com todos os sub-níveis,
+    por mês individual. O browser soma os meses selecionados.
+    Regras: tools/regra_ressultado_primario_nominal.txt
+    """
+    def _fmt3(arr):
+        return {"a": round(arr[0], 2), "b": round(arr[1], 2), "c": round(arr[2], 2),
+                "total": round(arr[0] + arr[1] + arr[2], 2)}
+
+    REC_KEYS = [
+        # Principais (já existiam)
+        "I","II","III","V","VII","VIII","IX","X","XI","XII","XIV",
+        # Sub-níveis correntes EXCETO RPPS
+        "icms","ipva","itcd","iptu","itbi","iss","ir","outros_impostos","taxas",
+        "contribuicoes",
+        "outras_patrimoniais",
+        "fpe","fpm","itr_trans","lc87","lc61","fundeb","outras_transf_corr",
+        "correntes_restantes",
+        # Sub-níveis capital EXCETO RPPS
+        "outras_alienacoes","convenios","outras_transf_cap","outras_cap_prim",
+    ]
+    DEP_KEYS = [
+        # Principais (já existiam)
+        "XVIII","XIX","XXI","XXIII","XXIV","XXV","XXVI","XXVII","XXIX","XXX",
+        # Sub-níveis
+        "pessoal","outras_correntes_dep","investimentos","demais_inv",
+    ]
+
+    M_rec = {m: {k: 0.0 for k in REC_KEYS} for m in range(1, 13)}
+    M_dep = {m: {k: [0.0, 0.0, 0.0] for k in DEP_KEYS} for m in range(1, 13)}
+    M_jur = {m: {"XXXVI": 0.0, "XXXVII": 0.0} for m in range(1, 13)}
+    P_rec = {k: 0.0 for k in REC_KEYS}
+
+    _APLIC_FIN = {"132101","132102","132103","132104","132105","132999",
+                  "732101","732102","732103","732104","732105","732999"}
+    _FUNDEB_4  = {"1715","1751","7715","7751"}
+
+    def _classifica_rec(val, co, cc_corr, is_exceto_rpps, bucket):
+        co2, co3, co4, co6, co7 = co[:2], co[:3], co[:4], co[:6], co[:7]
+        try:
+            co_int = int(co)
+        except (ValueError, TypeError):
+            co_int = 0
+        is_corrente = co2 in {"11","12","13","14","15","16","17","19",
+                               "71","72","73","74","75","76","77","79"}
+        is_capital  = co2 in {"21","22","23","24","29","81","82","83","84","89"}
+        is_aplic    = cc_corr[:6] in _APLIC_FIN
+        is_out_fin  = (co4 in {"1944","7944"} or
+                       co6 in {"164101","164103","199911","764101","764103","799911"} or
+                       co7 in {"1922012","1922064","1922142","1999993",
+                                "7922012","7922064","7922142","7999993"})
+
+        if is_exceto_rpps:
+            if is_corrente:
+                bucket["I"] += val
+                if is_aplic:
+                    bucket["II"] += val
+                elif is_out_fin:
+                    bucket["III"] += val
+                # Sub-categorias
+                if co2 in {"11","71"}:
+                    if   (11145010 <= co_int <= 11145099) or (11145200 <= co_int <= 11145299):
+                        bucket["icms"]          += val
+                    elif co6 in {"111251","711251"}:
+                        bucket["ipva"]          += val
+                    elif 11125200 <= co_int <= 11125299:
+                        bucket["itcd"]          += val
+                    elif 11125000 <= co_int <= 11125099:
+                        bucket["iptu"]          += val
+                    elif 11125300 <= co_int <= 11125399:
+                        bucket["itbi"]          += val
+                    elif co7 in {"1114511","1114512","7114511","7114512"}:
+                        bucket["iss"]           += val
+                    elif co6 in {"111303","711303"}:
+                        bucket["ir"]            += val
+                    elif co4 in {"1119"}:
+                        bucket["outros_impostos"] += val
+                    elif co3 in {"112","712"}:
+                        bucket["taxas"]         += val
+                elif co2 in {"12","72"}:
+                    bucket["contribuicoes"]     += val
+                elif co2 in {"13","73"}:
+                    if not is_aplic:
+                        bucket["outras_patrimoniais"] += val
+                elif co2 in {"17","77"}:
+                    if   17115000 <= co_int <= 17115099:
+                        bucket["fpe"]            += val
+                    elif 17115100 <= co_int <= 17115199:
+                        bucket["fpm"]            += val
+                    elif 17115200 <= co_int <= 17115299:
+                        bucket["itr_trans"]      += val
+                    elif 17115300 <= co_int <= 17115399:
+                        bucket["lc61"]           += val
+                    elif co4 in _FUNDEB_4:
+                        bucket["fundeb"]         += val
+                    else:
+                        bucket["outras_transf_corr"] += val
+                elif co2 in {"14","15","16","19","74","75","76","79"}:
+                    if not is_out_fin:
+                        bucket["correntes_restantes"] += val
+            elif is_capital:
+                bucket["VII"] += val
+                if   co2 in {"21","81"}:
+                    bucket["VIII"] += val
+                elif co2 in {"23","83"}:
+                    bucket["IX"]   += val
+                elif co6 in {"221101","821101"}:
+                    bucket["X"]    += val
+                elif co6 in {"221102","821102"}:
+                    bucket["XI"]   += val
+                elif co2 in {"22","82"}:
+                    bucket["outras_alienacoes"] += val
+                elif co2 in {"24","84"}:
+                    if (co4 in {"2414","2422","2432","8414","8422","8432"} or
+                            co6 in {"244150","244151","844150","844151"}):
+                        bucket["convenios"]          += val
+                    else:
+                        bucket["outras_transf_cap"]  += val
+                elif co3 in {"292","293","294","892","893","894"}:
+                    bucket["XII"] += val
+                elif co3 in {"291","299","891","899"}:
+                    bucket["outras_cap_prim"] += val
+        else:
+            if is_corrente and not (is_aplic or is_out_fin):
+                bucket["V"] += val
+            elif ((co2 in {"22","24","82","84"} or co3 in {"291","299","891","899"}) and
+                  co6 not in {"221101","221102","821101","821102"}):
+                bucket["XIV"] += val
+
+    for r in rows:
+        cc = str(r.get("cocontacontabil") or "").strip()
+        if not cc:
+            continue
+        mes     = int(r.get("inmes") or 0)
+        vacred  = float(r.get("vacredito") or 0)
+        vadeb   = float(r.get("vadebito")  or 0)
+        cf      = str(r.get("cofontefederal") or "").strip()
+        co      = str(r.get("coclasseorc")    or "").strip()
+        cc_corr = str(r.get("cocontacorrente") or "").strip()
+        na      = str(r.get("conatureza")     or "").strip()
+        func    = str(r.get("cofuncao")       or "").strip()
+        is_rpps        = cf[1:4] in {"800","801","802"} if len(cf) >= 4 else False
+        is_exceto_rpps = not is_rpps
+        cc4 = cc[:4]
+        cc7 = cc[:7]
+
+        if cc4 in {"6212","6213"}:
+            if not mes or mes > 12:
+                continue
+            _classifica_rec(vacred - vadeb, co, cc_corr, is_exceto_rpps, M_rec[mes])
+
+        elif cc4 in {"5211","5212"}:
+            _classifica_rec(vadeb - vacred, co, cc_corr, is_exceto_rpps, P_rec)
+
+        else:
+            if not mes or mes > 12:
+                continue
+            if   cc7 == "6221304":                col, val = 0, vacred - vadeb
+            elif cc4 == "6322":                   col, val = 1, vacred - vadeb
+            elif cc in {"631400000","631820000"}:  col, val = 2, vacred - vadeb
+            elif _is_xxxvi(cc)  and is_exceto_rpps:
+                M_jur[mes]["XXXVI"]  += vacred - vadeb; continue
+            elif _is_xxxvii(cc) and is_exceto_rpps:
+                M_jur[mes]["XXXVII"] += vadeb - vacred; continue
+            else:
+                continue
+
+            na2    = na[:2]
+            na_mod = na[4:6]
+
+            if func == "99":
+                M_dep[mes]["XXIX"][col] += val
+            elif is_exceto_rpps:
+                if na2 in {"31","32","33"}:
+                    M_dep[mes]["XVIII"][col] += val
+                    if   na2 == "31": M_dep[mes]["pessoal"][col]              += val
+                    elif na2 == "32": M_dep[mes]["XIX"][col]                  += val
+                    elif na2 == "33": M_dep[mes]["outras_correntes_dep"][col] += val
+                elif na2 in {"44","45","46"}:
+                    M_dep[mes]["XXIII"][col] += val
+                    if na2 == "44":
+                        M_dep[mes]["investimentos"][col] += val
+                    elif na2 == "45":
+                        if   na_mod == "66": M_dep[mes]["XXIV"][col]     += val
+                        elif na_mod == "64": M_dep[mes]["XXV"][col]      += val
+                        elif na_mod == "63": M_dep[mes]["XXVI"][col]     += val
+                        else:                M_dep[mes]["demais_inv"][col] += val
+                    elif na2 == "46":
+                        M_dep[mes]["XXVII"][col] += val
+            else:
+                if na2 in {"31","33"}:
+                    M_dep[mes]["XXI"][col] += val
+                elif na2 in {"44","45"} and not (na2 == "45" and na_mod in {"63","64","66"}):
+                    M_dep[mes]["XXX"][col] += val
+
+    max_mes = next((m for m in range(12, 0, -1)
+                    if any(M_rec[m][k] != 0.0 for k in REC_KEYS)), 0)
+    if max_mes == 0:
+        max_mes = next((m for m in range(12, 0, -1)
+                        if any(any(v != 0.0 for v in M_dep[m][k]) for k in DEP_KEYS)), 1)
+
+    P_IV   = P_rec["I"]   - P_rec["II"]  - P_rec["III"]
+    P_XIII = P_rec["VII"] - (P_rec["VIII"] + P_rec["IX"] + P_rec["X"] + P_rec["XI"] + P_rec["XII"])
+    previsao = {k: round(P_rec[k], 2) for k in REC_KEYS}
+    previsao.update({
+        "IV":   round(P_IV, 2),
+        "XIII": round(P_XIII, 2),
+        "XVI":  round(P_IV + P_rec["V"] + P_XIII + P_rec["XIV"], 2),
+        "XVII": round(P_IV + P_XIII, 2),
+    })
+
+    por_mes = {}
+    for mes in range(1, max_mes + 1):
+        por_mes[str(mes)] = {
+            "rec": {k: round(M_rec[mes][k], 2) for k in REC_KEYS},
+            "dep": {k: [round(M_dep[mes][k][i], 2) for i in range(3)] for k in DEP_KEYS},
+            "jur": {"XXXVI": round(M_jur[mes]["XXXVI"], 2),
+                    "XXXVII": round(M_jur[mes]["XXXVII"], 2)},
+        }
+
+    log.info(f"  Resultado Primário/Nominal: max_mes={max_mes}, meses={list(por_mes.keys())}")
+    return {"max_mes": max_mes, "previsao": previsao, "por_mes": por_mes}
 
 
 def init_oracle():
@@ -711,6 +1003,11 @@ def run():
                         registros = build_restos_a_pagar_data(data)
                         save_restos_a_pagar_gz(registros)
                         upsert_restos_a_pagar_supabase(registros)
+                        save_json(item["file"], data)
+                    elif item.get("transform") == "resultado_primario_nominal":
+                        D_obj = build_resultado_primario_nominal_data(data)
+                        save_resultado_primario_nominal_gz(D_obj)
+                        upsert_resultado_primario_nominal_supabase(D_obj)
                         save_json(item["file"], data)
                     elif item["file"] == "receita.json":
                         save_json(item["file"], data)
