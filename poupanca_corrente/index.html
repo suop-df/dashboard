@@ -33,44 +33,60 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .btn-voltar:hover{background:rgba(255,255,255,.25)}
 
 /* ═══ CONTENT ═══ */
-.content{padding:20px 28px 40px}
+.content{padding:28px 36px 56px}
 
 /* ═══ TOPO ═══ */
-.topo-row{display:flex;gap:14px;margin-bottom:16px;align-items:stretch}
-.kpi-col{display:flex;flex-direction:column;gap:14px;flex-shrink:0;width:230px}
-.kpi-card{background:#fff;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);border-left:4px solid #cbd5e1;transition:box-shadow .2s}
-.kpi-card.dentro{border-left-color:var(--green-600)}
-.kpi-card.acima{border-left-color:var(--red-600)}
-.kpi-label{font-size:.67rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
-.kpi-value{font-size:2rem;font-weight:800;line-height:1.1;margin-bottom:6px}
-.kpi-card.dentro .kpi-value{color:var(--green-600)}
-.kpi-card.acima  .kpi-value{color:var(--red-600)}
-.kpi-badge{display:inline-block;font-size:.65rem;font-weight:700;padding:2px 10px;border-radius:4px}
+.topo-row{position:relative;display:flex;align-items:center;min-height:160px;margin-bottom:20px}
+
+/* Card principal — Poupança Corrente (centralizado absolutamente) */
+.kpi-main{position:absolute;left:50%;transform:translateX(-50%);background:#fff;border-radius:var(--radius);padding:28px 30px;box-shadow:var(--shadow-md);border-left:6px solid #cbd5e1;display:flex;flex-direction:column;justify-content:center;min-width:280px}
+.kpi-main.dentro{border-left-color:var(--green-600);background:linear-gradient(135deg,#fff 70%,#f0fdf4)}
+.kpi-main.acima {border-left-color:var(--red-600); background:linear-gradient(135deg,#fff 70%,#fff1f2)}
+.kpi-label{font-size:.67rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
+.kpi-main .kpi-value{font-size:2.6rem;font-weight:800;line-height:1;margin-bottom:8px}
+.kpi-main.dentro .kpi-value{color:var(--green-600)}
+.kpi-main.acima  .kpi-value{color:var(--red-600)}
+.kpi-badge{display:inline-block;font-size:.65rem;font-weight:700;padding:3px 12px;border-radius:4px}
 .kpi-badge.s{background:var(--green-100);color:var(--green-900)}
 .kpi-badge.d{background:var(--red-100);color:var(--red-900)}
-.kpi-sub{font-size:.67rem;color:#94a3b8;font-weight:500;margin-top:6px}
-.kpi-limit{background:#fff;border-radius:var(--radius);padding:14px 18px;box-shadow:var(--shadow-sm);border-left:4px solid #94a3b8}
-.kpi-limit .kpi-label{color:#64748b}
-.kpi-limit .kpi-value{font-size:1.4rem;color:#475569}
+.kpi-sub{font-size:.67rem;color:#94a3b8;font-weight:500;margin-top:8px}
 
-/* gauge */
-.gauge-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);flex:1;display:flex;align-items:center;justify-content:center;min-height:220px}
-#gauge-chart{width:100%;height:240px}
+/* Bloco informativo do limite */
+.limit-info{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;padding:4px 0;flex-shrink:0}
+.limit-info-title{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8}
+.limit-info-value{font-size:1.8rem;font-weight:800;color:#475569}
+.limit-info-law{font-size:.75rem;font-weight:500;color:#64748b}
+
+/* ═══ CHART ═══ */
+.chart-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:20px}
+#line-chart{height:280px;padding:0 8px}
+
+/* ═══ CARDS ROW ═══ */
+.cards-row{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.kpi-mini{background:#fff;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);border-top:3px solid #cbd5e1;flex:1;min-width:130px}
+.kpi-mini.rec{border-top-color:var(--accent-500)}
+.kpi-mini.dep{border-top-color:var(--red-600)}
+.kpi-mini.liq{border-top-color:#f97316}
+.kpi-mini.ins{border-top-color:#f59e0b}
+.kpi-mini.can{border-top-color:#8b5cf6}
+.kpi-mini .kpi-label{font-size:.6rem;margin-bottom:4px}
+.kpi-mini .kpi-value{font-size:.92rem;font-weight:700;color:#334155}
+.kpi-mini .kpi-sub{font-size:.58rem;color:#94a3b8;margin-top:3px}
 
 /* ═══ NOTE ═══ */
-.note-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:12px 20px;margin-bottom:16px;font-size:.72rem;color:#475569;line-height:1.6}
+.note-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:16px 24px;margin-bottom:20px;font-size:.72rem;color:#475569;line-height:1.6}
 .note-panel strong{color:var(--accent-700)}
 
 /* ═══ TABLE ═══ */
-.table-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:20px}
-.table-panel-header{padding:12px 20px;border-bottom:1px solid #f1f5f9}
-.table-panel-header h3{font-size:.82rem;font-weight:700;color:var(--accent-900)}
+.table-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:24px}
+.table-panel-header{padding:16px 24px;border-bottom:1px solid #f1f5f9}
+.table-panel-header h3{font-size:.86rem;font-weight:700;color:var(--accent-900)}
 .table-wrap{overflow-x:auto}
-table.dem{width:100%;border-collapse:collapse;font-size:.72rem}
-table.dem th{background:var(--accent-50);color:var(--accent-900);text-align:center;padding:7px 6px;border-bottom:2px solid var(--accent-200);font-size:.64rem;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
-table.dem th.left{text-align:left;padding-left:10px}
-table.dem td{padding:5px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
-table.dem td.mes{text-align:left;padding-left:10px;font-weight:600;color:#334155}
+table.dem{width:100%;border-collapse:collapse;font-size:.76rem}
+table.dem th{background:var(--accent-50);color:var(--accent-900);text-align:center;padding:10px 10px;border-bottom:2px solid var(--accent-200);font-size:.67rem;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+table.dem th.left{text-align:left;padding-left:16px}
+table.dem td{padding:9px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+table.dem td.mes{text-align:left;padding-left:16px;font-weight:600;color:#334155}
 table.dem td.pct{font-weight:800;font-size:.8rem}
 table.dem td.pct.dentro{color:var(--green-600)}
 table.dem td.pct.acima{color:var(--red-600)}
@@ -83,8 +99,8 @@ tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!impo
 .footer{text-align:center;padding:14px 28px;font-size:.67rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff;line-height:1.6}
 
 /* ═══ RESPONSIVE ═══ */
-@media(max-width:768px){.topo-row{flex-direction:column}.kpi-col{flex-direction:row;width:auto;flex-wrap:wrap}}
-@media(max-width:768px){.header{padding:12px 16px;flex-wrap:wrap}.content{padding:12px 16px}}
+@media(max-width:900px){.topo-row{min-height:auto;flex-wrap:wrap;gap:14px}.kpi-main{position:static;transform:none;left:auto;width:100%}}
+@media(max-width:768px){.header{padding:12px 16px;flex-wrap:wrap}.content{padding:16px 18px 32px}}
 @media print{.header{print-color-adjust:exact;-webkit-print-color-adjust:exact}.kpi-card,.table-panel{break-inside:avoid}}
 </style>
 </head>
@@ -100,8 +116,8 @@ tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!impo
 <div class="header">
   <img id="brasao" alt="Bras&#227;o do DF">
   <div class="header-titles">
-    <h1 id="titulo-header">DISTRITO FEDERAL &middot; POUPAN&#199;A CORRENTE</h1>
-    <div class="subtitle">Art. 167-A da CF &mdash; Despesas Correntes / Receita Corrente (&#218;ltimos 12 Meses) &middot; SEEC/SEFIN - Secretaria Executiva de Finan&#231;as, Or&#231;amento e Planejamento</div>
+    <h1 id="titulo-header">DISTRITO FEDERAL &middot; POUPAN&#199;A CORRENTE &mdash; &#218;ltimos 12 Meses</h1>
+    <div class="subtitle">SEEC/SEFIN - Secretaria Executiva de Finan&#231;as, Or&#231;amento e Planejamento</div>
     <p class="data-atualizacao" id="data-atualizacao">Carregando dados&#8230;</p>
   </div>
   <a href="../" class="btn-voltar">&#8592; Voltar</a>
@@ -110,24 +126,54 @@ tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!impo
 <!-- ══ CONTENT ══ -->
 <div class="content">
 
-  <!-- Topo: KPIs + Gauge -->
+  <!-- Topo: Card principal + Limite info + Gauge discreto -->
   <div class="topo-row">
-    <div class="kpi-col">
-      <div class="kpi-card" id="kpi-main">
-        <div class="kpi-label">Poupan&#231;a Corrente</div>
-        <div class="kpi-value" id="kv-poupanca">&#8212;</div>
-        <span class="kpi-badge" id="kb-poupanca">&nbsp;</span>
-        <div class="kpi-sub" id="ks-poupanca">M&#234;s de refer&#234;ncia mais recente</div>
-      </div>
-      <div class="kpi-limit">
-        <div class="kpi-label">Limite (Art. 167-A)</div>
-        <div class="kpi-value">95,00%</div>
-        <div class="kpi-sub">Despesas Correntes &#8804; 95% da Receita Corrente</div>
-      </div>
+    <div class="kpi-main" id="kpi-main">
+      <div class="kpi-label">Poupan&#231;a Corrente</div>
+      <div class="kpi-value" id="kv-poupanca">&#8212;</div>
+      <span class="kpi-badge" id="kb-poupanca">&nbsp;</span>
+      <div class="kpi-sub" id="ks-poupanca">M&#234;s de refer&#234;ncia mais recente</div>
     </div>
-    <div class="gauge-panel">
-      <div id="gauge-chart"></div>
+    <div class="limit-info">
+      <div class="limit-info-title">Limite Legal</div>
+      <div class="limit-info-value">95,00%</div>
+      <div class="limit-info-law">Art. 167-A da CF</div>
     </div>
+  </div>
+
+  <!-- Cards de componentes -->
+  <div class="cards-row">
+    <div class="kpi-mini rec">
+      <div class="kpi-label">Receita Corrente 12m</div>
+      <div class="kpi-value" id="kv-rec">&#8212;</div>
+      <div class="kpi-sub">&#218;ltimos 12 meses</div>
+    </div>
+    <div class="kpi-mini dep">
+      <div class="kpi-label">Despesa Corrente 12m</div>
+      <div class="kpi-value" id="kv-dep">&#8212;</div>
+      <div class="kpi-sub">Liq. + RPNP Insc. &#8722; RPNP Can.</div>
+    </div>
+    <div class="kpi-mini liq">
+      <div class="kpi-label">Desp. Liquidadas 12m</div>
+      <div class="kpi-value" id="kv-liq">&#8212;</div>
+      <div class="kpi-sub">&#218;ltimos 12 meses</div>
+    </div>
+    <div class="kpi-mini ins">
+      <div class="kpi-label">RPNP Inscrito</div>
+      <div class="kpi-value" id="kv-ins">&#8212;</div>
+      <div class="kpi-sub">Exerc&#237;cio anterior</div>
+    </div>
+    <div class="kpi-mini can">
+      <div class="kpi-label">RPNP Cancelado</div>
+      <div class="kpi-value" id="kv-can">&#8212;</div>
+      <div class="kpi-sub">Acum. no exerc&#237;cio</div>
+    </div>
+  </div>
+
+  <!-- Gráfico de linha -->
+  <div class="chart-panel">
+    <div class="table-panel-header"><h3>Evolu&#231;&#227;o Mensal &mdash; Poupan&#231;a Corrente (%)</h3></div>
+    <div id="line-chart"></div>
   </div>
 
   <!-- Nota metodológica -->
@@ -148,11 +194,8 @@ tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!impo
         <thead>
           <tr>
             <th class="left" style="min-width:80px">M&#234;s</th>
-            <th style="min-width:150px">Receita Corrente 12m (R$)</th>
-            <th style="min-width:150px">Desp. Liquidadas 12m (R$)</th>
-            <th style="min-width:140px">(+) RPNP Inscrito (R$)</th>
-            <th style="min-width:140px">(-) RPNP Cancelado (R$)</th>
-            <th style="min-width:150px">Desp. Corrente 12m (R$)</th>
+            <th style="min-width:160px">Receita Corrente 12m (R$)</th>
+            <th style="min-width:160px">Despesa Corrente 12m (R$)</th>
             <th style="min-width:90px">Poupan&#231;a (%)</th>
             <th style="min-width:110px">Situa&#231;&#227;o</th>
           </tr>
@@ -183,40 +226,77 @@ function fmtNum(v){
   var s=abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   return v<0?'<span style="color:#ef4444">('+s+')</span>':s;
 }
+function fmtBi(v){
+  if(v==null||isNaN(v)) return '—';
+  var abs=Math.abs(v),sig=v<0?'-':'';
+  if(abs>=1e9) return sig+'R$ '+(abs/1e9).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' bi';
+  if(abs>=1e6) return sig+'R$ '+(abs/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' mi';
+  return sig+'R$ '+abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
 function fmtPct(v){
   if(v==null||isNaN(v)) return '<span style="color:#cbd5e1">–</span>';
   return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
 }
 
-var gaugeChart;
-function renderGauge(pct){
-  if(!gaugeChart){
-    gaugeChart=echarts.init(document.getElementById('gauge-chart'));
-  }
+var lineChart;
+function renderChart(){
+  if(!lineChart) lineChart=echarts.init(document.getElementById('line-chart'));
   var lim=D.limite_pct||95;
-  var maxVal=Math.max(105, pct!=null?Math.ceil(pct+2):105);
-  var withinLim=pct!=null&&pct<=lim;
-  var color=withinLim?'#16a34a':'#dc2626';
-  gaugeChart.setOption({
-    series:[{
-      type:'gauge',
-      min:0,max:maxVal,
-      radius:'85%',
-      axisLine:{lineStyle:{width:18,color:[[lim/maxVal,'#16a34a'],[1,'#dc2626']]}},
+  var labels=[],values=[];
+  for(var m=1;m<=D.max_mes;m++){
+    var pm=D.por_mes[String(m)];
+    if(!pm) continue;
+    labels.push(MESES[m].substring(0,3));
+    values.push(pm.poupanca_pct!=null?pm.poupanca_pct:null);
+  }
+  var valid=values.filter(function(v){return v!=null;});
+  if(!valid.length) return;
+  var minY=Math.floor(Math.min.apply(null,[lim-2].concat(valid)))-1;
+  var maxY=Math.ceil(Math.max.apply(null,[lim+1].concat(valid)))+1;
+  // Cor por ponto: verde se <= limite, vermelho se acima
+  var data=values.map(function(v){
+    return {value:v,itemStyle:{color:v!=null&&v<=lim?'#16a34a':'#dc2626'}};
+  });
+  // Cor dominante da linha: maioria acima do limite?
+  var nAcima=valid.filter(function(v){return v>lim;}).length;
+  var lineColor=nAcima>=valid.length/2?'#dc2626':'#16a34a';
+  lineChart.setOption({
+    grid:{top:24,right:56,bottom:32,left:58},
+    tooltip:{
+      trigger:'axis',
+      formatter:function(p){
+        var v=p[0].data.value!=null?p[0].data.value:p[0].value;
+        var s=v!=null?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'–';
+        var cor=v!=null&&v<=lim?'#16a34a':'#dc2626';
+        return p[0].name+'<br/><span style="color:'+cor+';font-weight:700">'+s+'</span>';
+      }
+    },
+    xAxis:{
+      type:'category',data:labels,
+      axisLine:{lineStyle:{color:'#e2e8f0'}},
       axisTick:{show:false},
-      splitLine:{show:false},
-      axisLabel:{
-        fontSize:10,color:'#64748b',
-        formatter:function(v){return v===0||v===lim||v===maxVal?v+'%':'';}
+      axisLabel:{color:'#64748b',fontSize:11}
+    },
+    yAxis:{
+      type:'value',min:minY,max:maxY,
+      axisLabel:{formatter:'{value}%',color:'#64748b',fontSize:11},
+      splitLine:{lineStyle:{color:'#f1f5f9'}}
+    },
+    series:[{
+      type:'line',data:data,smooth:true,symbolSize:8,
+      lineStyle:{width:2.5,color:lineColor},
+      areaStyle:{color:lineColor,opacity:0.07},
+      markLine:{
+        silent:true,symbol:'none',
+        lineStyle:{type:'dashed',color:'#94a3b8',width:1.5},
+        label:{formatter:'Limite 95%',position:'insideEndTop',color:'#64748b',fontSize:10,fontWeight:600},
+        data:[{yAxis:lim}]
       },
-      pointer:{width:5,length:'65%',itemStyle:{color:color}},
-      detail:{
-        valueAnimation:true,
-        formatter:function(v){return v!=null?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'–';},
-        fontSize:22,fontWeight:700,color:color,offsetCenter:[0,'65%']
-      },
-      title:{offsetCenter:[0,'82%'],fontSize:11,color:'#64748b'},
-      data:[{value:pct!=null?pct:0,name:'Poupança Corrente'}]
+      markArea:{
+        silent:true,
+        itemStyle:{color:'rgba(220,38,38,0.04)'},
+        data:[[{yAxis:lim},{yAxis:maxY}]]
+      }
     }]
   });
 }
@@ -226,16 +306,19 @@ function renderKPI(mes,pm){
   var lim=D.limite_pct||95;
   var dentro=pct!=null&&pct<=lim;
   var card=document.getElementById('kpi-main');
-  card.className='kpi-card '+(pct==null?'':'dentro'+(dentro?'':''.replace('dentro','acima')));
-  if(pct!=null) card.className='kpi-card '+(dentro?'dentro':'acima');
+  card.className='kpi-main'+(pct!=null?' '+(dentro?'dentro':'acima'):'');
   document.getElementById('kv-poupanca').textContent=
     pct!=null?pct.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'—';
   var badge=document.getElementById('kb-poupanca');
   if(pct==null){badge.textContent='—';badge.className='kpi-badge';}
   else if(dentro){badge.textContent='Dentro do Limite';badge.className='kpi-badge s';}
   else{badge.textContent='Acima do Limite';badge.className='kpi-badge d';}
-  document.getElementById('ks-poupanca').textContent=
-    'Referência: '+MESES[mes]+' '+D.ano_atual;
+  document.getElementById('ks-poupanca').textContent='Referência: '+MESES[mes]+' '+D.ano_atual;
+  document.getElementById('kv-rec').textContent=fmtBi(pm.rec_corrente_12m);
+  document.getElementById('kv-dep').textContent=fmtBi(pm.desp_corrente_12m);
+  document.getElementById('kv-liq').textContent=fmtBi(pm.desp_liquidadas_12m);
+  document.getElementById('kv-ins').textContent=fmtBi(pm.rpnp_inscrito);
+  document.getElementById('kv-can').textContent=fmtBi(pm.rpnp_cancelado);
 }
 
 function renderTable(){
@@ -252,9 +335,6 @@ function renderTable(){
       '<tr>'
       +'<td class="mes">'+m+' – '+escHtml(MESES[m])+'</td>'
       +'<td>'+fmtNum(pm.rec_corrente_12m)+'</td>'
-      +'<td>'+fmtNum(pm.desp_liquidadas_12m)+'</td>'
-      +'<td>'+fmtNum(pm.rpnp_inscrito)+'</td>'
-      +'<td>'+fmtNum(pm.rpnp_cancelado)+'</td>'
       +'<td>'+fmtNum(pm.desp_corrente_12m)+'</td>'
       +'<td class="pct '+pctCls+'">'+fmtPct(pct)+'</td>'
       +'<td style="text-align:center">'+sit+'</td>'
@@ -272,15 +352,11 @@ function init(json){
     var d=new Date(json.atualizado_em);
     el.textContent='Dados atualizados em: '+d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
   }
-  if(D.ano_atual){
-    document.getElementById('titulo-header').textContent=
-      'DISTRITO FEDERAL · POUPANÇA CORRENTE — '+D.ano_atual;
-    document.title='Poupança Corrente — GDF '+D.ano_atual;
-  }
+  document.title='Poupança Corrente — GDF'+(D.ano_atual?' '+D.ano_atual:'');
   var latestMes=D.max_mes;
   var latestPm=D.por_mes[String(latestMes)]||{};
   renderKPI(latestMes,latestPm);
-  renderGauge(latestPm.poupanca_pct!=null?latestPm.poupanca_pct:null);
+  renderChart();
   renderTable();
 }
 
