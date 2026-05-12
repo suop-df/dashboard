@@ -1,0 +1,382 @@
+============================================================
+ REGRAS — RELATÓRIO PDF DE RESULTADO ORÇAMENTÁRIO
+ (Análise de Déficit/Superávit)
+ Contadoria Geral do Distrito Federal — ContDF/SEEC
+ Criado em: 12/04/2026
+ Última atualização: 12/04/2026
+============================================================
+
+1. OBJETIVO
+   Gerar relatório PDF em paisagem (A4 landscape) com a análise
+   completa do resultado orçamentário (déficit/superávit) do GDF,
+   mês a mês e acumulado, incluindo verificações de consistência.
+   O relatório é gerado pelo script gerar_relatorio_pdf.py.
+
+2. FONTE DE DADOS
+   O script lê 3 queries SQL do banco Oracle:
+   - db/queries/RECEITA.sql — receita orçamentária
+   - db/queries/DESPESA.sql — despesa orçamentária
+   - db/queries/CREDITOS_ADICIONAIS.sql — créditos adicionais
+
+   Todas passam pela lógica de mês fechado (mesfechado) e fallback
+   de virada de ano, idêntica aos dashboards HTML.
+
+3. CONTAS CONTÁBEIS UTILIZADAS
+
+   3.1. Receita Realizada
+        cocontacontabil BETWEEN '621200000' AND '621399999'
+        Classe 6: saldo = vacredito − vadebito
+
+   3.2. Despesa Empenhada
+        cocontacontabil BETWEEN '622130000' AND '622139999'
+        Classe 6: saldo = vacredito − vadebito
+
+   3.3. Despesa Liquidada (calculada mas NÃO exibida no PDF atual)
+        cocontacontabil IN ('622130300', '622130400', '622130700')
+
+   3.4. Despesa Paga (reservado para uso futuro)
+        cocontacontabil = '622920104'
+
+   3.5. Previsão Atualizada (classe 5: saldo = vadebito − vacredito)
+        cocontacontabil BETWEEN '521100000' AND '521299999'
+
+   3.6. Previsão Inicial
+        cocontacontabil BETWEEN '521100000' AND '521199999'
+
+   3.7. Dotação Autorizada (despesa, classe 5)
+        cocontacontabil BETWEEN '522110000' AND '522129999'
+        + BETWEEN '522150000' AND '522159999'
+        + BETWEEN '522190000' AND '522199999'
+
+   3.8. Dotação Inicial (despesa, classe 5)
+        cocontacontabil BETWEEN '522110000' AND '522119999'
+
+   3.9. Créditos Adicionais (classe 5)
+        Contas específicas: 522120100, 522120201, 522120202, 522120301,
+                            522150100, 522150200, 522150300
+        NOTA: as contas 522150xxx (reduções) já vêm com saldo negativo
+        (vadebito − vacredito), então basta SOMAR todas as contas.
+        Fórmula: Total Créditos = 522120100 + 522120201 + 522120202
+                 + 522120301 + 522150100 + 522150200 + 522150300
+
+   3.10. Superávit Financeiro Utilizado (classe 5)
+         cocontacontabil BETWEEN '522130100' AND '522130199'
+
+4. SEÇÕES DO PDF — VISÃO GERAL
+
+   O relatório contém 11 seções, cada uma em página(s) própria(s):
+
+   Seção 1: Resultado Orçamentário — Mês a Mês
+   Seção 2: Evolução do Resultado Orçamentário Acumulado (gráfico)
+   Seção 3: Resultado Orçamentário sem Superávit Financeiro
+   Seção 4: Receita Corrente × Despesa Corrente — Acumulado
+   Seção 5: Receita de Capital × Despesa de Capital — Acumulado
+   Seção 6: Receita Corrente Intra × Despesa Corrente Intra — Acumulado
+   Seção 7: Créditos Adicionais — Regra 1 (Despesa) — SÓ SE DIVERGENTE
+   Seção 8: Créditos Adicionais — Regra 2 (Receita) — SÓ SE DIVERGENTE
+   Seção 9: Art. 167-A CF/88 — Sem Intraorçamentária
+   Seção 10: Art. 167-A CF/88 — Com Intraorçamentária
+   Seção 11: Art. 167-A CF/88 — Cálculo do Índice
+
+   IMPORTANTE: o relatório utiliza APENAS a despesa empenhada.
+   A despesa liquidada é calculada internamente mas NÃO aparece em
+   nenhuma tabela ou gráfico do PDF. Decisão do usuário.
+
+5. SEÇÃO 1 — RESULTADO ORÇAMENTÁRIO MÊS A MÊS
+
+   5.1. Tabela com 4 colunas:
+        Mês | Receita Realizada | Despesa Empenhada | Resultado (Rec−Emp)
+
+   5.2. Valores mensais (não acumulados).
+
+   5.3. Linha TOTAL ao final com somatório.
+
+   5.4. Coluna Resultado colorida: verde se ≥ 0, vermelho se < 0.
+
+6. SEÇÃO 2 — EVOLUÇÃO DO RESULTADO ORÇAMENTÁRIO ACUMULADO
+
+   6.1. Gráfico de linhas (matplotlib):
+        - 1 linha: Resultado acumulado (Receita − Empenhada)
+        - Área preenchida verde (superávit) / vermelha (déficit)
+        - Labels em caixinha com borda colorida
+
+   6.2. Resumo textual abaixo do gráfico com diagnóstico:
+        "SUPERÁVIT ORÇAMENTÁRIO" ou "DÉFICIT ORÇAMENTÁRIO"
+
+7. SEÇÃO 3 — RESULTADO SEM SUPERÁVIT FINANCEIRO
+
+   7.1. Compara Receita Realizada × Despesa Empenhada EXCLUINDO
+        empenhos com fontes de Superávit Financeiro.
+
+   7.2. Fontes excluídas (campo 'fonte' = cofonte, 9 dígitos):
+        - cofonte entre 300000000 e 499999999
+        - cofonte entre 800000000 e 899999999
+
+   7.3. Tabela com 4 colunas (valores ACUMULADOS):
+        Mês | Receita Realizada Acumulada |
+        Desp. Empenhada Acum. (s/ Superávit) | Resultado (Rec − Emp s/ Sup)
+
+   7.4. Linha TOTAL ao final.
+
+   7.5. Gráfico de linhas com 3 séries:
+        - Receita Realizada (verde)
+        - Desp. Empenhada s/ Superávit (vermelho)
+        - Resultado (laranja tracejado)
+        Escala automática (bilhões ou milhões).
+
+   7.6. Nota explicativa SEM menção aos códigos cofonte (removida por
+        solicitação do usuário em 12/04/2026). Texto: "Despesa Empenhada
+        excluindo fontes de Superávit Financeiro".
+
+8. SEÇÕES 4-6 — RESULTADO POR CATEGORIA ECONÔMICA
+
+   Cada categoria ocupa uma página com tabela (4 colunas) + gráfico.
+
+   8.1. Classificação da RECEITA (campo 'receita' = 8 primeiros
+        dígitos do cocontacorrente):
+
+        - Receita Corrente:       código entre 10000000 e 19999999
+        - Receita de Capital:     código entre 20000000 e 29999999
+        - Receita Corrente Intra: código entre 70000000 e 79999999
+
+   8.2. Classificação da DESPESA (conatureza = primeiros 6 dígitos
+        do campo 'despesa' que o SQL retorna como conatureza||'00'):
+
+        - Despesa Corrente:       conatureza entre 300000 e 399999,
+                                  intra (posições 3-4) ≠ '91'
+        - Despesa de Capital:     conatureza entre 400000 e 499999,
+                                  intra ≠ '91'
+        - Despesa Corrente Intra: conatureza entre 300000 e 399999,
+                                  intra = '91'
+
+   8.3. Pares de comparação (somente empenhada):
+        a) Receita Corrente       × Despesa Corrente
+        b) Receita de Capital     × Despesa de Capital
+        c) Receita Corrente Intra × Despesa Corrente Intra
+
+   8.4. Tabela por categoria (4 colunas, valores ACUMULADOS):
+        Mês | Receita Realizada | Despesa Empenhada | Resultado (Rec−Emp)
+        Linha TOTAL ao final.
+
+   8.5. Gráfico por categoria:
+        Gráfico de linhas com 3 séries:
+        - Receita acumulada (cor específica por categoria)
+        - Despesa empenhada acumulada (cor específica)
+        - Resultado acumulado (laranja #FF8F00 tracejado)
+        Escala automática (bilhões ou milhões).
+
+   8.6. Cores por categoria:
+        Corrente:       receita #2E7D32, despesa #C62828
+        Capital:        receita #1565C0, despesa #E65100
+        Corrente Intra: receita #00695C, despesa #AD1457
+
+9. SEÇÕES 7-8 — CRÉDITOS ADICIONAIS (CONDICIONAIS)
+
+   Verifica a integridade dos créditos adicionais por meio de duas
+   regras de consistência, cada uma em página própria com tabela
+   mensal (acumulada) + resumo textual com diagnóstico.
+
+   IMPORTANTE: estas seções SÓ APARECEM no PDF se houver divergência.
+   Se ambas as regras estiverem OK, as seções são omitidas do relatório.
+   Cada regra é avaliada individualmente — pode aparecer só a Regra 1,
+   só a Regra 2, ambas, ou nenhuma.
+
+   9.1. REGRA 1 — Verificação pela Despesa:
+        Dotação Autorizada − Dotação Inicial = Total de Créditos Líquido
+
+        Tabela com 7 colunas:
+        Mês | Dot. Autorizada | Dot. Inicial | Diferença (Aut−Ini) |
+        Total Créditos (Abertos−Reduc.) | Diferença (Dif−Créd) | Status
+
+        Verificação: (Dot.Aut − Dot.Ini) − Total Créditos ≈ 0
+        Tolerância: < R$ 0,01
+
+   9.2. REGRA 2 — Verificação pela Receita:
+        Prev. Atualizada − Prev. Inicial = Total Créditos − Superávit Financeiro
+
+        Tabela com 9 colunas:
+        Mês | Prev. Atualizada | Prev. Inicial | Diferença (Atu−Ini) |
+        Total Créditos (Abertos−Reduc.) | Superávit Financeiro |
+        Créd − Superávit | Diferença (Dif−CrSup) | Status
+
+        Verificação: (Prev.Atu − Prev.Ini) − (Créd − Sup) ≈ 0
+        Tolerância: < R$ 0,01
+
+   9.3. Acumulação mensal:
+        Para cada mês M, acumula todos os registros com inmes ≤ M.
+
+   9.4. Status: "OK" (verde) ou "DIVERG." (vermelho) mês a mês.
+        Linha TOTAL com verificação geral.
+        Resumo textual com diagnóstico CONSISTENTE ou DIVERGENTE.
+
+   9.5. NOTA SOBRE SALDO DAS CONTAS DE CRÉDITOS:
+        As contas de reduções (522150100, 522150200, 522150300) já
+        retornam saldo negativo (vadebito − vacredito). Por isso,
+        a fórmula é apenas a SOMA de todas as 7 contas — NÃO precisa
+        subtrair as reduções manualmente, pois o sinal já é correto.
+
+10. SEÇÕES 9-11 — ART. 167-A CF/88 (TETO DE DESPESAS CORRENTES)
+
+    O Art. 167-A da CF/88 estabelece que quando a relação entre
+    Despesas Correntes e Receitas Correntes supera 95% nos últimos
+    12 meses, aplicam-se vedações constitucionais.
+
+    10.1. Janela de 12 meses:
+          A partir do último mês fechado do exercício atual, recua
+          12 meses para trás (podendo cruzar exercícios). Exemplo:
+          se último mês fechado é março/2026, a janela vai de
+          abril/2025 a março/2026.
+
+    10.2. Dois cenários calculados:
+
+          a) SEM Intraorçamentária:
+             - Receita Corrente: código receita entre 10000000-19999999
+             - Despesa Corrente Empenhada: conatureza 300000-399999,
+               intra ≠ '91'
+
+          b) COM Intraorçamentária:
+             - Receita Corrente: 10000000-19999999 + 70000000-79999999
+               (inclui Receita Corrente Intra)
+             - Despesa Corrente Empenhada: conatureza 300000-399999,
+               qualquer valor de intra (inclui intra = '91')
+
+    10.3. Seção 9 — Tabela SEM intra (1 página):
+          Tabela com 3 colunas: Período | Receita Corrente |
+          Despesa Corrente Empenhada
+          12 linhas (uma por mês) + linha TOTAL (12 meses).
+
+    10.4. Seção 10 — Tabela COM intra (1 página):
+          Mesma estrutura da seção 9, mas com valores que incluem
+          as operações intraorçamentárias.
+
+    10.5. Seção 11 — Cálculo do Índice (1 página, usar KeepTogether):
+          Apresenta os dois cenários em caixas de resumo na mesma página:
+
+          Cenário 1 — Sem Intraorçamentária:
+          Índice = Despesas Correntes / Receitas Correntes
+          Exibe: totais de receita e despesa (12 meses), fórmula,
+          índice percentual (fonte grande, colorido),
+          diagnóstico: "DENTRO DO LIMITE" (verde) ou
+          "ACIMA DO LIMITE — VEDAÇÕES DO ART. 167-A APLICÁVEIS" (vermelho)
+
+          Cenário 2 — Com Intraorçamentária:
+          Mesma estrutura, com valores que incluem intra.
+
+    10.6. Limite constitucional: 95,00%
+          Se índice > 95% → vermelho, vedações aplicáveis
+          Se índice ≤ 95% → verde, dentro do limite
+
+11. NORMALIZAÇÃO DE TIPOS (IMPORTANTE)
+    O Oracle pode retornar tipos variados (numeric, string). Antes de
+    qualquer filtro em pandas, normalizar:
+    - coexercicio → str (strip)
+    - cocontacontabil → str (strip)
+    - inmes → int (via pd.to_numeric)
+    - saldo → float (via pd.to_numeric)
+    - conatureza → derivado de despesa[:6] (o SQL retorna conatureza||'00')
+    - intra → str (strip) — vem do SQL como SUBSTR(conatureza, 3, 2)
+    - receita → str (strip) — vem do SQL como SUBSTR(cocontacorrente, 1, 8)
+
+    CUIDADO: o campo 'conatureza' NÃO existe diretamente no DataFrame
+    de despesa. O SQL retorna 'despesa' (= conatureza || '00'). Derivar
+    conatureza como despesa[:6].
+
+12. LAYOUT DO PDF
+
+    12.1. Formato: A4 paisagem (landscape)
+    12.2. Margens: esquerda/direita 1,5cm, topo ~4,2cm, base 1,8cm
+    12.3. Biblioteca: reportlab (Platypus + Canvas)
+
+    12.4. Cabeçalho (desenhado via Canvas em todas as páginas):
+          - Brasão do DF (1,8×1,8cm) no canto superior esquerdo
+          - Ao lado: "Governo do Distrito Federal" (bold, verde #006633)
+                     "Secretaria de Estado de Economia do DF"
+                     "Contadoria Geral do Distrito Federal"
+          - Centralizado abaixo: "Relatório de Resultado Orçamentário — {ano}"
+            (bold, 13pt, verde)
+          - Linha separadora verde (com espaçamento adequado do título)
+          - Se fallback ativo: aviso em itálico vermelho
+
+    12.5. Rodapé:
+          - Linha cinza fina
+          - "Relatório gerado em DD/MM/AAAA às HH:MM | Dados extraídos até
+            {Mês}/{Ano} — Contadoria Geral do DF (ContDF/SEEC)"
+            (o mês/ano de referência é o último mês fechado do exercício)
+          - "Página {n}" à direita
+
+    12.6. Tabelas:
+          - Cabeçalho: fundo verde escuro (#006633), fonte BRANCA (bold)
+            IMPORTANTE: usar ParagraphStyle com textColor=white nos
+            Paragraph do header, pois a TableStyle TEXTCOLOR não sobrepõe
+            a cor definida no Paragraph.
+          - Corpo: zebra branco / cinza claro (#F5F5F5)
+          - Linha TOTAL: fundo verde claro (#E8F5E9), bold, linha acima verde
+          - Grid: 0,4pt cinza, borda externa 1pt verde
+          - Valores de resultado: verde (#006633) se ≥ 0, vermelho (#CC0000) se < 0
+
+    12.7. Gráficos (matplotlib, DPI 200):
+          - Tamanho: figsize=(14, 5) ou (14, 5.5) — proporcional ao PDF paisagem
+          - Eixos limpos: sem borda superior/direita, grid sutil
+          - Marcadores grandes (9pt) com borda branca
+          - Labels em caixinha com fundo branco e borda colorida
+          - Escala automática: bilhões (≥1e9) ou milhões (<1e9)
+          - Formatação brasileira nos eixos (ponto milhar, vírgula decimal)
+
+    12.8. Paginação:
+          - Cada seção começa em nova página (PageBreak)
+          - Usar KeepTogether para manter gráfico + resumo juntos
+          - NUNCA deixar conteúdo quebrar no meio entre páginas
+
+    12.9. Textos:
+          - TODOS os textos de exibição devem usar acentuação correta
+            do português brasileiro: Orçamentário, Exercício, Mês,
+            Evolução, Verificação, Créditos, Diferença, Reduções,
+            Superávit, Déficit, Índice, Cálculo, Período, Dotação,
+            Previsão, Página, etc.
+          - Formatação de moeda: R$ 1.234.567,89 (ponto milhar, vírgula decimal)
+          - Negativos entre parênteses e em vermelho
+
+13. PALETA DE CORES
+
+    13.1. Institucional:
+          - Verde escuro: #006633 (cabeçalho, bordas, superávit)
+          - Verde claro: #E8F5E9 (fundo linha total)
+          - Vermelho: #CC0000 (déficit, valores negativos)
+          - Azul: #1565C0 (uso eventual)
+          - Cinza escuro: #333333 (texto principal)
+          - Cinza claro: #F5F5F5 (zebra das tabelas)
+
+    13.2. Gráficos por categoria:
+          Corrente:       receita #2E7D32, despesa #C62828
+          Capital:        receita #1565C0, despesa #E65100
+          Corrente Intra: receita #00695C, despesa #AD1457
+          Resultado:      #FF8F00 (laranja) em todos
+
+14. ESTRUTURA DE SAÍDA
+
+    O PDF é salvo em:
+    output/balanco_orcamentario/resultado_orcamentario_YYYYMMDD_HHMMSS.pdf
+
+    O nome do arquivo inclui data e hora de geração para facilitar
+    o controle de versões (ex: resultado_orcamentario_20260412_103000.pdf).
+
+15. PIPELINE DO MAIN()
+
+    1.  Consultar meses fechados (mesfechado + fallback)
+    2.  Buscar dados: RECEITA.sql, DESPESA.sql, CREDITOS_ADICIONAIS.sql
+    3.  Normalizar tipos (Oracle → pandas)
+    4.  Calcular resultado geral mês a mês
+    5.  Calcular resultado sem superávit financeiro
+    6.  Calcular resultado por categoria econômica
+    7.  Calcular créditos adicionais (Regra 1 + Regra 2)
+    8.  Calcular Art. 167-A CF/88 (12 meses, sem e com intra)
+    9.  Gerar gráficos (geral, sem superávit, categorias)
+    10. Gerar PDF (todas as seções)
+    11. Fechar conexão com banco
+
+16. EVOLUÇÃO PREVISTA
+    - Comparação com exercício anterior
+    - Análise de execução orçamentária (% realizado vs autorizado)
+    - Integrar despesa paga (conta 622920104)
+    - Detalhamento dos créditos por tipo (suplementar, especial, extraordinário)
+    - Receita de Capital Intra (80000000-89999999) — hoje não há seção separada

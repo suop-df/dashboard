@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RREO — Receita Corrente Líquida — GDF 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:#f0f2f5;color:#1e293b;min-height:100vh;
+}
+:root{--radius:12px;--shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);--shadow-md:0 4px 12px rgba(0,0,0,.08);--shadow-lg:0 10px 30px rgba(0,0,0,.1);
+  --accent-900:#1b5e20;--accent-800:#2e7d32;--accent-700:#006633;--accent-600:#388e3c;
+  --accent-500:#43a047;--accent-400:#66bb6a;--accent-300:#a5d6a7;--accent-200:#c8e6c9;
+  --accent-100:#e8f5e9;--accent-50:#f1f8e9;
+  --gradient:linear-gradient(135deg,#1b5e20 0%,#006633 40%,#2e7d32 100%);
+  --green-600:#16a34a;--green-100:#dcfce7;--green-900:#14532d;
+  --red-600:#dc2626;--red-100:#fee2e2;--red-900:#991b1b;
+  --blue-600:#2563eb;--blue-100:#dbeafe;
+}
+
+/* ═══ HEADER ═══ */
+.header{background:var(--gradient);color:#fff;padding:16px 28px;display:flex;align-items:center;gap:24px;box-shadow:var(--shadow-lg);position:relative;z-index:200}
+.header img{height:52px;flex-shrink:0}
+.header-titles{flex:1}
+.header-titles h1{font-size:1rem;font-weight:700;letter-spacing:.3px;line-height:1.3}
+.header-titles .subtitle{font-size:.75rem;opacity:.75;font-weight:400;margin-top:2px}
+.period-badge{background:rgba(255,255,255,.15);padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:600;flex-shrink:0}
+.btn-voltar{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;transition:background .2s;flex-shrink:0}
+.btn-voltar:hover{background:rgba(255,255,255,.25)}
+
+/* ═══ CONTENT ═══ */
+.content{padding:20px 28px 40px}
+
+/* ═══ KPI ROW ═══ */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi-card{background:#fff;border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow-sm);border-left:4px solid var(--accent-500);transition:box-shadow .2s,transform .2s;position:relative;overflow:hidden}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-card::after{content:'';position:absolute;top:-30px;right:-20px;width:80px;height:80px;background:var(--accent-100);border-radius:50%;opacity:.4}
+.kpi-card .kpi-label{font-size:.7rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.kpi-card .kpi-value{font-size:1.5rem;font-weight:800;color:var(--accent-900);line-height:1.1;margin-bottom:4px}
+.kpi-card .kpi-sub{font-size:.72rem;color:#94a3b8;font-weight:500}
+.kpi-card.accent{background:var(--gradient);color:#fff;border-left-color:transparent}
+.kpi-card.accent::after{background:rgba(255,255,255,.1)}
+.kpi-card.accent .kpi-label{color:rgba(255,255,255,.7)}
+.kpi-card.accent .kpi-value{color:#fff}
+.kpi-card.accent .kpi-sub{color:rgba(255,255,255,.6)}
+
+/* ═══ CHARTS ═══ */
+.charts-row{display:grid;grid-template-columns:1fr 300px;gap:16px;margin-bottom:20px}
+.charts-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;transition:box-shadow .2s}
+.chart-panel:hover{box-shadow:var(--shadow-md)}
+.chart-panel-title{font-size:.82rem;font-weight:700;color:var(--accent-900);margin-bottom:4px}
+.chart-panel-subtitle{font-size:.68rem;color:#94a3b8;margin-bottom:14px;font-weight:500}
+
+/* ═══ TABLE ═══ */
+.table-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.table-panel-header{padding:16px 22px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
+.table-panel-header h3{font-size:.85rem;font-weight:700;color:var(--accent-900)}
+.table-panel-header .table-search{font-family:inherit;font-size:.78rem;padding:5px 12px;border:1.5px solid #e2e8f0;border-radius:8px;width:220px;transition:border-color .15s}
+.table-panel-header .table-search:focus{border-color:var(--accent-500);outline:none}
+.table-wrap{overflow-x:auto}
+table.rcl{width:100%;border-collapse:collapse;font-size:.72rem}
+table.rcl th{background:var(--accent-50);color:var(--accent-900);text-align:center;padding:8px 6px;border-bottom:2px solid var(--accent-200);font-size:.65rem;font-weight:700;white-space:nowrap;position:sticky;top:0;text-transform:uppercase;letter-spacing:.3px}
+table.rcl td{padding:5px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap}
+table.rcl td.name{text-align:left;white-space:normal;min-width:180px;max-width:280px}
+table.rcl td.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.n0 td{background:var(--accent-100);font-weight:700;font-size:.74rem;color:var(--accent-900)}
+tr.n1 td{background:var(--accent-50);font-weight:700;font-size:.72rem}
+tr.n2 td{font-weight:600}
+tr.n3 td{font-weight:400;color:#475569}
+tr.ded td{color:var(--red-900)}
+tr.ded.n0 td{background:var(--red-100)}
+tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!important}
+.r0{padding-left:10px!important}.r1{padding-left:24px!important}.r2{padding-left:38px!important}.r3{padding-left:52px!important}
+
+/* ═══ BIMESTRE SELECTOR ═══ */
+.bim-bar{display:flex;align-items:center;gap:10px;background:#fff;border-radius:var(--radius);padding:12px 18px;box-shadow:var(--shadow-sm);margin-bottom:20px;flex-wrap:wrap}
+.bim-bar-label{font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;margin-right:4px}
+.bim-btn{font-family:inherit;font-size:.75rem;font-weight:600;padding:6px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;transition:all .18s;white-space:nowrap}
+.bim-btn:hover:not(:disabled){border-color:var(--accent-500);color:var(--accent-800);background:var(--accent-50)}
+.bim-btn.active{background:var(--gradient);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(0,102,51,.25)}
+.bim-btn:disabled{opacity:.38;cursor:not-allowed;background:#f1f5f9;color:#94a3b8}
+.bim-btn-clear{font-family:inherit;font-size:.72rem;font-weight:500;padding:5px 11px;border-radius:8px;border:1.5px dashed #cbd5e1;background:transparent;color:#94a3b8;cursor:pointer;transition:all .18s;margin-left:auto}
+.bim-btn-clear:hover{border-color:var(--accent-400);color:var(--accent-700)}
+.bim-tag{font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--accent-100);color:var(--accent-800);white-space:nowrap}
+
+/* ═══ FOOTER ═══ */
+.data-atualizacao{font-size:.7rem;opacity:.75;margin-top:4px;font-weight:400}
+.footer{text-align:center;padding:16px 28px;font-size:.68rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff;line-height:1.6}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(2,1fr)}.charts-row,.charts-row-2{grid-template-columns:1fr}}
+@media(max-width:768px){.kpi-row{grid-template-columns:1fr}.header{padding:12px 16px;flex-wrap:wrap}.content{padding:12px 16px}}
+@media print{.table-search{display:none!important}.header{print-color-adjust:exact;-webkit-print-color-adjust:exact}.kpi-card,.chart-panel,.table-panel{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <img id="brasao" alt="Brasão do DF">
+  <div class="header-titles">
+    <h1>DISTRITO FEDERAL &middot; RREO &middot; RECEITA CORRENTE LÍQUIDA</h1>
+    <div class="subtitle" id="view-subtitle">Orçamento Fiscal e da Seguridade Social &middot; SEEC/SEFIN - Secretaria Executiva de Finanças, Orçamento e Planejamento</div>
+    <p class="data-atualizacao" id="data-atualizacao">Carregando dados...</p>
+  </div>
+  <div class="period-badge" id="period-badge"></div>
+  <a href="../" class="btn-voltar">← Voltar</a>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Bimestre Selector -->
+  <div class="bim-bar" id="bim-bar">
+    <span class="bim-bar-label">Bimestre</span>
+    <button class="bim-btn" id="bim-1" onclick="onBimestreSelect(1)">1º Bim<br><span style="font-weight:400;font-size:.68rem">jan·fev</span></button>
+    <button class="bim-btn" id="bim-2" onclick="onBimestreSelect(2)">2º Bim<br><span style="font-weight:400;font-size:.68rem">mar·abr</span></button>
+    <button class="bim-btn" id="bim-3" onclick="onBimestreSelect(3)">3º Bim<br><span style="font-weight:400;font-size:.68rem">mai·jun</span></button>
+    <button class="bim-btn" id="bim-4" onclick="onBimestreSelect(4)">4º Bim<br><span style="font-weight:400;font-size:.68rem">jul·ago</span></button>
+    <button class="bim-btn" id="bim-5" onclick="onBimestreSelect(5)">5º Bim<br><span style="font-weight:400;font-size:.68rem">set·out</span></button>
+    <button class="bim-btn" id="bim-6" onclick="onBimestreSelect(6)">6º Bim<br><span style="font-weight:400;font-size:.68rem">nov·dez</span></button>
+    <button class="bim-btn-clear" id="bim-clear" onclick="onBimestreClear()" style="display:none">✕ Limpar filtro</button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-row">
+    <div class="kpi-card" id="kpi-1">
+      <div class="kpi-label">RCL REALIZADA (12 MESES)</div>
+      <div class="kpi-value" id="kpi-1-value">—</div>
+      <div class="kpi-sub" id="kpi-1-sub"></div>
+    </div>
+    <div class="kpi-card" id="kpi-2">
+      <div class="kpi-label">PREVISÃO ATUALIZADA</div>
+      <div class="kpi-value" id="kpi-2-value">—</div>
+      <div class="kpi-sub" id="kpi-2-sub"></div>
+    </div>
+    <div class="kpi-card" id="kpi-3">
+      <div class="kpi-label">FUNDO CONSTITUCIONAL (FCDF)</div>
+      <div class="kpi-value" id="kpi-3-value">—</div>
+      <div class="kpi-sub" id="kpi-3-sub"></div>
+    </div>
+    <div class="kpi-card accent" id="kpi-4">
+      <div class="kpi-label">EXECUÇÃO (REAL. / PREV.)</div>
+      <div class="kpi-value" id="kpi-4-value">—</div>
+      <div class="kpi-sub" id="kpi-4-sub"></div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1: Line Evolution + Gauge -->
+  <div class="charts-row">
+    <div class="chart-panel">
+      <div class="chart-panel-title">Evolução Mensal da RCL</div>
+      <div class="chart-panel-subtitle">Receita Corrente Líquida — últimos 12 meses (R$ Milhões)</div>
+      <div id="chart-line" style="width:100%;height:320px;"></div>
+    </div>
+    <div class="chart-panel" style="display:flex;flex-direction:column;align-items:center;">
+      <div class="chart-panel-title" style="align-self:flex-start;">Execução da RCL</div>
+      <div class="chart-panel-subtitle" style="align-self:flex-start;">Realizado 12m / Previsão Atualizada</div>
+      <div id="chart-gauge" style="width:260px;height:260px;"></div>
+    </div>
+  </div>
+
+  <!-- Charts Row 2: Stacked Bars + Treemap -->
+  <div class="charts-row-2">
+    <div class="chart-panel">
+      <div class="chart-panel-title">Composição Mensal das Receitas Correntes</div>
+      <div class="chart-panel-subtitle">Principais categorias — valores em R$ Milhões</div>
+      <div id="chart-stacked" style="width:100%;height:300px;"></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-panel-title">Composição da RCL (12 meses)</div>
+      <div class="chart-panel-subtitle">Proporção por categoria de receita</div>
+      <div id="chart-treemap" style="width:100%;height:300px;"></div>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="table-panel">
+    <div class="table-panel-header">
+      <h3>Demonstrativo da Receita Corrente Líquida</h3>
+      <input type="text" class="table-search" id="table-search"
+             placeholder="Buscar na tabela..." oninput="onSearchTable()">
+    </div>
+    <div class="table-wrap">
+      <table class="rcl" id="tbl">
+        <thead id="tbl-head"></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<div class="footer">
+  FONTE: SIAC — Sistema Integrado de Administração Financeira e Contábil<br>
+  Unidade de Informações Fiscais / Contadoria Geral do DF / SEFIN / SEEC
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA — carregado via fetch de rcl.json.gz (gerado pelo ETL)
+// ═══════════════════════════════════════════════════════════════
+let D;
+
+// ═══════════════════════════════════════════════════════════════
+// BIMESTRE — estado do seletor
+// ═══════════════════════════════════════════════════════════════
+let activeBimestre = null;   // null = sem filtro (padrão 12 meses)
+let colToRotulo    = {};     // mapa "m,ano" → rótulo legível
+
+// Retorna os 12 meses (como chave "m,ano") que terminam no último mês do bimestre B
+function getColumnsForBimestre(b) {
+  const endMes = b * 2;
+  const endAno = D.ref_ano || D.ano;
+  const cols = [];
+  let m = endMes, a = endAno;
+  for (let i = 0; i < 12; i++) {
+    cols.unshift(m + ',' + a);
+    m--;
+    if (m === 0) { m = 12; a--; }
+  }
+  return cols;
+}
+
+// Colunas ativas: janela_padrao quando sem filtro, ou janela do bimestre
+function getActiveCols() {
+  if (activeBimestre === null) return D.janela_padrao || D.colunas;
+  return getColumnsForBimestre(activeBimestre);
+}
+
+// Soma de uma linha para as colunas ativas
+function sumLinha(key, cols) {
+  return cols.reduce(function(s, c) { return s + (D.linhas[key][c] || 0); }, 0);
+}
+
+// Configura botões: habilitados/desabilitados conforme ref_mes
+function setupBimestreBar() {
+  const refMes = D.ref_mes || 0;
+  for (let b = 1; b <= 6; b++) {
+    var btn = document.getElementById('bim-' + b);
+    var lastMonth = b * 2;
+    if (lastMonth <= refMes) {
+      btn.disabled = false;
+    } else {
+      btn.disabled = true;
+    }
+  }
+}
+
+function onBimestreSelect(b) {
+  if (activeBimestre === b) { onBimestreClear(); return; }
+  activeBimestre = b;
+  // Atualiza aparência dos botões
+  for (let i = 1; i <= 6; i++) {
+    document.getElementById('bim-' + i).classList.toggle('active', i === b);
+  }
+  document.getElementById('bim-clear').style.display = '';
+  refresh();
+}
+
+function onBimestreClear() {
+  activeBimestre = null;
+  for (let i = 1; i <= 6; i++) {
+    document.getElementById('bim-' + i).classList.remove('active');
+  }
+  document.getElementById('bim-clear').style.display = 'none';
+  refresh();
+}
+
+// Re-renderiza tudo com as colunas ativas atuais
+function refresh() {
+  const cols = getActiveCols();
+  updatePeriodBadge(cols);
+  renderKPIs(cols);
+  renderCharts(cols);
+  renderTable(cols);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════════════
+let cLine, cGauge, cStacked, cTreemap;
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtNum(v){
+  if(v==null||isNaN(v)||v===0) return '<span style="color:#cbd5e1">–</span>';
+  const abs=Math.abs(v);
+  const s=abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return v<0?'<span style="color:#ef4444">('+s+')</span>':s;
+}
+function fmtBi(v){
+  if(Math.abs(v)>=1e9) return 'R$ '+(v/1e9).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' bi';
+  if(Math.abs(v)>=1e6) return 'R$ '+(v/1e6).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' mi';
+  return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function onSearchTable(){
+  const term=document.getElementById('table-search').value.toLowerCase();
+  document.querySelectorAll('#tbl-body tr').forEach(tr=>{
+    tr.style.display=(!term||tr.textContent.toLowerCase().includes(term))?'':'none';
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function init(){
+  cLine    = echarts.init(document.getElementById('chart-line'));
+  cGauge   = echarts.init(document.getElementById('chart-gauge'));
+  cStacked = echarts.init(document.getElementById('chart-stacked'));
+  cTreemap = echarts.init(document.getElementById('chart-treemap'));
+
+  window.addEventListener('resize',()=>{
+    cLine.resize();cGauge.resize();cStacked.resize();cTreemap.resize();
+  });
+
+  // Mapa coluna → rótulo (cobre todos os meses exportados)
+  D.colunas.forEach(function(c, i){ colToRotulo[c] = D.rotulos[i]; });
+
+  // Configura seletor de bimestres
+  setupBimestreBar();
+
+  // Renderização inicial (sem filtro de bimestre)
+  refresh();
+}
+
+function updatePeriodBadge(cols){
+  var r0 = colToRotulo[cols[0]] || cols[0];
+  var rN = colToRotulo[cols[cols.length-1]] || cols[cols.length-1];
+  var badge = r0 + ' a ' + rN;
+  if(activeBimestre !== null) badge = activeBimestre + 'º Bimestre · ' + badge;
+  document.getElementById('period-badge').textContent = badge;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KPIs
+// ═══════════════════════════════════════════════════════════════
+function renderKPIs(cols){
+  const rcl12   = sumLinha('rcl',  cols);
+  const prev    = D.previsao.rcl;
+  const fcdf12  = sumLinha('fcdf', cols);
+  const recCorr = sumLinha('receitas_correntes', cols);
+  const ded     = sumLinha('deducoes', cols);
+  const pct     = prev > 0 ? (rcl12 / prev * 100) : 0;
+  const lbl12   = activeBimestre !== null ? '12m até ' + colToRotulo[cols[cols.length-1]] : '12 meses';
+
+  document.getElementById('kpi-1-value').textContent = fmtBi(rcl12);
+  document.getElementById('kpi-1-sub').textContent = 'Rec. Correntes: ' + fmtBi(recCorr) + ' | Deduções: ' + fmtBi(ded);
+
+  document.getElementById('kpi-2-value').textContent = fmtBi(prev);
+  document.getElementById('kpi-2-sub').textContent = 'Exercício ' + D.ano;
+
+  document.getElementById('kpi-3-value').textContent = fmtBi(fcdf12);
+  document.getElementById('kpi-3-sub').textContent   = 'Total FCDF: ' + fmtBi(sumLinha('fcdf_total', cols)) + ' | Pessoal: ' + fmtBi(sumLinha('fcdf_pessoal', cols));
+
+  document.getElementById('kpi-4-value').textContent = pct.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+  document.getElementById('kpi-4-sub').textContent   = 'RCL ' + lbl12 + ' / Previsão Atualiz.';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════════════
+function renderCharts(cols){
+  const labels = cols.map(function(c){ return colToRotulo[c] || c; });
+
+  // helper: get series values from a line key
+  function getSeries(key){
+    return cols.map(c => +(D.linhas[key][c] / 1e6).toFixed(2));
+  }
+
+  // — LINE CHART: RCL monthly evolution —
+  const rclSeries   = getSeries('rcl');
+  const recSeries   = getSeries('receitas_correntes');
+  const dedSeries   = getSeries('deducoes');
+
+  cLine.setOption({
+    tooltip:{trigger:'axis',formatter:params=>{
+      let s='<strong>'+params[0].name+'</strong><br/>';
+      params.forEach(p=>{s+=p.marker+' '+p.seriesName+': <strong>R$ '+p.value.toLocaleString('pt-BR',{minimumFractionDigits:1})+' mi</strong><br/>'});
+      return s;
+    }},
+    legend:{top:0,textStyle:{fontSize:11,fontFamily:'Inter'}},
+    grid:{left:70,right:20,top:40,bottom:30},
+    xAxis:{type:'category',data:labels,axisLabel:{fontSize:11,fontFamily:'Inter'}},
+    yAxis:{type:'value',axisLabel:{fontSize:10,formatter:v=>v.toLocaleString('pt-BR')+' mi'},splitLine:{lineStyle:{type:'dashed',color:'#f1f5f9'}}},
+    series:[
+      {name:'RCL (IV)',type:'line',data:rclSeries,lineStyle:{width:3,color:'#006633'},itemStyle:{color:'#006633'},symbol:'circle',symbolSize:7,
+       areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(126,34,206,.15)'},{offset:1,color:'rgba(126,34,206,.02)'}]}}},
+      {name:'Rec. Correntes (I)',type:'line',data:recSeries,lineStyle:{width:2,color:'#16a34a',type:'dashed'},itemStyle:{color:'#16a34a'},symbol:'none'},
+      {name:'Deduções (II)',type:'line',data:dedSeries,lineStyle:{width:2,color:'#dc2626',type:'dotted'},itemStyle:{color:'#dc2626'},symbol:'none'},
+    ],
+    animationDuration:1000,
+  },true);
+
+  // — GAUGE —
+  const rcl12 = sumLinha('rcl', cols);
+  const prev  = D.previsao.rcl;
+  const pct   = prev > 0 ? +((rcl12/prev)*100).toFixed(1) : 0;
+
+  cGauge.setOption({
+    series:[{
+      type:'gauge',startAngle:220,endAngle:-40,min:0,max:120,splitNumber:6,radius:'90%',
+      axisLine:{lineStyle:{width:18,color:[[0.25,'#ef4444'],[0.5,'#f59e0b'],[0.67,'#66bb6a'],[0.83,'#2e7d32'],[1,'#1b5e20']]}},
+      pointer:{itemStyle:{color:'auto'},width:5,length:'60%'},
+      axisTick:{distance:-18,length:6,lineStyle:{color:'#fff',width:1.5}},
+      splitLine:{distance:-18,length:18,lineStyle:{color:'#fff',width:2}},
+      axisLabel:{color:'#64748b',distance:28,fontSize:11,formatter:v=>v+'%'},
+      detail:{valueAnimation:true,formatter:v=>v.toFixed(1)+'%',color:'inherit',fontSize:28,fontWeight:800,fontFamily:'Inter',offsetCenter:[0,'72%']},
+      title:{show:false},
+      data:[{value:pct}],
+      animationDuration:1200,animationEasingUpdate:'cubicOut',
+    }]
+  },true);
+
+  // — STACKED BAR: Monthly composition —
+  const catKeys = ['impostos','contribuicoes','patrimonial','servicos','transferencias','outras_correntes'];
+  const catNames = ['Impostos/Taxas','Contribuições','Patrimonial','Serviços','Transferências','Outras Rec.'];
+  const catColors = ['#006633','#2e7d32','#43a047','#66bb6a','#a5d6a7','#fbbf24'];
+
+  cStacked.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'},formatter:params=>{
+      let s='<strong>'+params[0].name+'</strong><br/>';
+      params.forEach(p=>{if(p.value>0)s+=p.marker+' '+p.seriesName+': R$ '+p.value.toLocaleString('pt-BR',{minimumFractionDigits:1})+' mi<br/>'});
+      return s;
+    }},
+    legend:{top:0,textStyle:{fontSize:10,fontFamily:'Inter'}},
+    grid:{left:70,right:16,top:40,bottom:30},
+    xAxis:{type:'category',data:labels,axisLabel:{fontSize:10,fontFamily:'Inter'}},
+    yAxis:{type:'value',axisLabel:{fontSize:10,formatter:v=>v.toLocaleString('pt-BR')+' mi'},splitLine:{lineStyle:{type:'dashed',color:'#f1f5f9'}}},
+    series:catKeys.map((k,i)=>({
+      name:catNames[i],type:'bar',stack:'comp',data:getSeries(k),
+      itemStyle:{color:catColors[i]},emphasis:{focus:'series'},
+    })),
+    animationDuration:800,
+  },true);
+
+  // — TREEMAP: composição das colunas ativas —
+  const tmData = catKeys.map((k,i)=>{
+    const v = sumLinha(k, cols);
+    return v > 0 ? {name:catNames[i],value:Math.round(v/1e6),itemStyle:{color:catColors[i]}} : null;
+  }).filter(Boolean);
+
+  // Add FCDF and subtract deductions for context
+  const fcdf12 = sumLinha('fcdf', cols);
+  if(fcdf12 > 0) tmData.push({name:'FCDF (líq.)',value:Math.round(fcdf12/1e6),itemStyle:{color:'#0ea5e9'}});
+
+  cTreemap.setOption({
+    tooltip:{formatter:p=>'<strong>'+p.name+'</strong><br/>R$ '+p.value.toLocaleString('pt-BR')+' mi'},
+    series:[{
+      type:'treemap',roam:false,width:'100%',height:'100%',
+      label:{show:true,fontSize:12,fontWeight:600,fontFamily:'Inter',formatter:p=>p.name+'\nR$ '+p.value.toLocaleString('pt-BR')+' mi',lineHeight:18},
+      itemStyle:{borderColor:'#fff',borderWidth:3,gapWidth:2},
+      data:tmData,animationDuration:800,
+    }]
+  },true);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE
+// ═══════════════════════════════════════════════════════════════
+function renderTable(cols){
+  const labels = cols.map(function(c){ return colToRotulo[c] || c; });
+  const lbl12  = activeBimestre !== null
+    ? 'TOTAL 12M<br>' + colToRotulo[cols[cols.length-1]]
+    : 'TOTAL<br>12 MESES';
+
+  // Build header
+  let h = '<tr><th style="text-align:left;min-width:180px;padding-left:10px;">ESPECIFICAÇÃO</th>';
+  labels.forEach(l => { h += '<th>' + l.toUpperCase() + '</th>'; });
+  h += '<th style="background:#e9d5ff;">' + lbl12 + '</th>';
+  h += '<th style="background:#e9d5ff;">PREVISÃO<br>ATUALIZ.</th>';
+  h += '</tr>';
+  document.getElementById('tbl-head').innerHTML = h;
+
+  // Row definitions
+  const rows = [
+    {key:'receitas_correntes', nome:'RECEITAS CORRENTES (I)',                nivel:0},
+    {key:'impostos',           nome:'Impostos, Taxas e Contribuições de Melhoria', nivel:1},
+    {key:'iptu',               nome:'IPTU',                                  nivel:3},
+    {key:'ir',                 nome:'Imposto sobre a Renda e Prov. de Qualquer Natureza', nivel:3},
+    {key:'ipva',               nome:'IPVA',                                  nivel:3},
+    {key:'itcd',               nome:'ITCD',                                  nivel:3},
+    {key:'itbi',               nome:'ITBI',                                  nivel:3},
+    {key:'icms',               nome:'ICMS',                                  nivel:3},
+    {key:'iss',                nome:'ISS',                                   nivel:3},
+    {key:'outros_impostos',    nome:'Outros Impostos',                       nivel:3},
+    {key:'taxas',              nome:'Taxas',                                 nivel:3},
+    {key:'itr',                nome:'ITR',                                   nivel:3, noPrevisao:true},
+    {key:'contribuicoes',      nome:'Receita de Contribuições',              nivel:2},
+    {key:'patrimonial',        nome:'Receita Patrimonial',                   nivel:1},
+    {key:'rend_aplic',         nome:'Rendimentos de Aplicação Financeira',   nivel:3},
+    {key:'outras_patrimoniais',nome:'Outras Receitas Patrimoniais',          nivel:3},
+    {key:'agropecuaria',       nome:'Receita Agropecuária',                  nivel:2},
+    {key:'industrial',         nome:'Receita Industrial',                    nivel:2},
+    {key:'servicos',           nome:'Receita de Serviços',                   nivel:2},
+    {key:'transferencias',     nome:'Transferências Correntes',              nivel:1},
+    {key:'fpe',                nome:'Cota-Parte do FPE',                     nivel:3},
+    {key:'fpm',                nome:'Cota-Parte do FPM',                     nivel:3},
+    {key:'itr_trans',          nome:'Cota-Parte do ITR',                     nivel:3},
+    {key:'lc61',               nome:'Transferências da LC 61/1989',          nivel:3},
+    {key:'fundeb_trans',       nome:'Transferências do FUNDEB',              nivel:3},
+    {key:'outras_transf',      nome:'Outras Transferências Correntes',       nivel:3},
+    {key:'outras_correntes',   nome:'Outras Receitas Correntes',             nivel:2},
+    {sep:true},
+    {key:'deducoes',           nome:'DEDUÇÕES (II)',                          nivel:0, ded:true},
+    {key:'contrib_servidor',   nome:'(−) Contrib. do Servidor p/ Previdência', nivel:3, ded:true},
+    {key:'comp_financeira',    nome:'(−) Compensação Financeira entre Regimes', nivel:3, ded:true},
+    {key:'rend_prev',          nome:'(−) Rendim. de Aplic. de Rec. Previdenciárias', nivel:3, ded:true},
+    {key:'ded_fundeb',         nome:'(−) Dedução de Receita p/ Formação do FUNDEB', nivel:3, ded:true},
+    {sep:true},
+    {key:'fcdf',               nome:'RECURSOS DO FCDF (III)',                nivel:0},
+    {key:'fcdf_total',         nome:'(+) Total de Recursos do FCDF',         nivel:3},
+    {key:'fcdf_pessoal',       nome:'(−) Despesas com Pessoal no FCDF',      nivel:3, ded:true},
+    {sep:true},
+    {key:'rcl',                nome:'RECEITA CORRENTE LÍQUIDA (IV) = I − II + III', nivel:0},
+    {sep:true},
+    {key:'emendas_ind',        nome:'(−) Transf. obrigat. União — emendas individuais (V)', nivel:2, ded:true},
+    {key:'rcl_endiv',          nome:'RCL AJUST. LIMITES ENDIVIDAMENTO (VI) = IV − V', nivel:0},
+    {key:'emendas_bancada',    nome:'(−) Transf. obrigat. União — emendas de bancada (VII)', nivel:2, ded:true},
+    {key:'agentes_com',        nome:'(−) Transf. União — agentes comunitários/saúde (VIII)', nivel:2, ded:true},
+    {key:'outras_ded',         nome:'(−) Outras Deduções Constitucionais ou Legais (IX)', nivel:2, ded:true},
+    {key:'rcl_pessoal',        nome:'RCL AJUST. LIMITES DESP. PESSOAL (X) = VI − VII − VIII − IX', nivel:0},
+  ];
+
+  const frags = [];
+  for(const r of rows){
+    if(r.sep){
+      frags.push('<tr><td colspan="'+(cols.length+3)+'" style="height:4px;background:#f1f5f9;padding:0;border:none;"></td></tr>');
+      continue;
+    }
+    const data = D.linhas[r.key];
+    const prev = D.previsao[r.key];
+    if(!data) continue;
+
+    const lvl = r.nivel;
+    const nome = lvl <= 1 ? r.nome.toUpperCase() : r.nome;
+    const dedClass = r.ded ? ' ded' : '';
+
+    const rowTotal = sumLinha(r.key, cols);
+    let tr = '<tr class="n'+lvl+dedClass+'">';
+    tr += '<td class="name r'+lvl+'">'+escHtml(nome)+'</td>';
+    cols.forEach(c => { tr += '<td class="num">'+fmtNum(data[c]||0)+'</td>'; });
+    tr += '<td class="num" style="background:#faf5ff;font-weight:700;">'+fmtNum(rowTotal)+'</td>';
+    tr += '<td class="num" style="background:#faf5ff;">'+
+      (r.noPrevisao ? '<span style="color:#cbd5e1">–</span>' : fmtNum(prev||0))+'</td>';
+    tr += '</tr>';
+    frags.push(tr);
+  }
+  document.getElementById('tbl-body').innerHTML = frags.join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FETCH — carrega rcl.json.gz e inicializa
+// ═══════════════════════════════════════════════════════════════
+(function() {
+  // Brasão
+  var img = document.getElementById('brasao');
+  img.src = '../tools/Bras%C3%A3o_do_Distrito_Federal_Brasil.png';
+  img.onerror = function() { img.style.display = 'none'; };
+
+  // Loading overlay
+  var overlay = document.createElement('div');
+  overlay.id = 'loading-overlay';
+  overlay.style.cssText = [
+    'position:fixed','inset:0','background:rgba(255,255,255,.85)',
+    'display:flex','align-items:center','justify-content:center',
+    'z-index:9999','font-family:sans-serif','font-size:1rem','color:#555',
+    'flex-direction:column','gap:12px'
+  ].join(';');
+  overlay.innerHTML = '<div style="font-size:2rem">&#9203;</div><div>Carregando dados da RCL\u2026</div>';
+  document.body.appendChild(overlay);
+
+  function fetchJsonGz(url) {
+    return fetch(url).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var ds = new DecompressionStream('gzip');
+      return new Response(r.body.pipeThrough(ds)).text();
+    }).then(function(text) {
+      return JSON.parse(text);
+    });
+  }
+
+  // Contingência: busca Supabase se GitHub Pages falhar
+  var SUPA_URL = 'https://otrlwfdtdrqpynemoexj.supabase.co';
+  var SUPA_KEY = 'sb_publishable_UKK5VWsrCXd1_zRR8tP16g_vySXJN5a';
+  function fetchSupabaseRCL() {
+    var ano = new Date().getFullYear();
+    return fetch(SUPA_URL + '/rest/v1/rcl?select=dados,atualizado_em&ano=eq.' + ano, {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+    }).then(function(r) {
+      if (!r.ok) throw new Error('Supabase HTTP ' + r.status);
+      return r.json();
+    }).then(function(rows) {
+      if (!rows || !rows.length) throw new Error('Supabase: nenhum dado RCL para ' + ano);
+      var json = rows[0].dados;
+      json.atualizado_em = rows[0].atualizado_em;
+      return json;
+    });
+  }
+
+  fetchJsonGz('../data/gz/rcl.json.gz?v=' + new Date().toISOString().slice(0,10))
+    .catch(function() { return fetchSupabaseRCL(); })
+    .then(function(json) {
+      D = json;
+      document.body.removeChild(overlay);
+      var elUp = document.getElementById("data-atualizacao");
+      if (elUp && json.atualizado_em) {
+        var dUp = new Date(json.atualizado_em);
+        elUp.textContent = "Dados atualizados em: " + dUp.toLocaleString("pt-BR", {timeZone:"America/Sao_Paulo"});
+      } else if (elUp) { elUp.textContent = ""; }
+      init();
+    })
+    .catch(function(err) {
+      overlay.innerHTML = '<div style="font-size:2rem">&#9888;</div><div>Erro ao carregar dados: ' + err.message + '</div>';
+    });
+})();
+</script>
+</body>
+</html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   

@@ -1,0 +1,248 @@
+============================================================
+ REGRAS - DASHBOARD RECEITA ORÇAMENTÁRIA (Balanço Orçamentário)
+ Contadoria Geral do Distrito Federal - ContDF/SEEC
+ Criado em: 10/04/2026
+ Última atualização: 12/04/2026 (v7 — filtro Categoria Econômica (Corrente/Capital) com radio buttons, integrado ao sistema de filtros dinâmicos/cascata)
+============================================================
+
+1. OBJETIVO
+   Exibir a execução da receita orçamentária do GDF em formato de
+   dashboard HTML interativo, destinado a publicação no site
+   institucional da Contadoria Geral para usuários externos.
+
+2. FONTE DE DADOS
+   - Banco Oracle via database.py + .env (conexão pool)
+   - SQL em db/queries/RECEITA.sql
+   - Tabelas: mil2001.saldocontabil_ex (saldos contábeis) — schema FIXO
+              {SCHEMA_ANO}.classificacaoorcamentaria (nomes das classificações)
+              {SCHEMA_ANO}.mesfechado (controle de meses fechados)
+              {SCHEMA_ANO}.fonterecurso (cofontefederal, nofonte — fonte de recurso)
+   - Campos da saldocontabil_ex usados:
+     coexercicio, inmes, coug, noug, cocontacontabil,
+     cocontacorrente, vadebito, vacredito
+   - IMPORTANTE: o schema das tabelas classificacaoorcamentaria e mesfechado
+     é dinâmico (ex: mil2026) e deve acompanhar o ano da consulta.
+     O único schema fixo é mil2001 (saldocontabil_ex).
+
+3. VALOR REALIZADO
+   - É a soma do SALDO das contas contábeis entre 621200000 e 621399999.
+   - Cálculo do saldo (classe 6): vacredito - vadebito.
+   - As contas entre 521100000 e 521299999 referem-se à PREVISÃO
+     (classe 5, saldo = vadebito - vacredito). Usar quando necessário
+     para colunas de previsão inicial/atualizada.
+
+4. ESTRUTURA DA TABELA DE RECEITA
+   Hierarquia de exibição (indentada):
+     Nível 1 - Categoria Econômica  (nome_categoria_economica)
+       Nível 2 - Origem da Receita  (nome_origem_receita)
+         Nível 3 - Espécie da Receita (nome_especie_receita)
+           Nível 4 - Tipo da Receita (nome_tipo_receita) — opcional
+   Regra: espécie é OMITIDA quando a origem possui apenas 1 espécie
+   (ver seção 14.1). O Tipo aparece quando o checkbox "Tipo da Receita"
+   está marcado. Cada tipo tem dropdown ▸ com as UGs arrecadadoras (14.2).
+   Ordenação: por código dentro de cada nível.
+
+5. COLUNAS DO DASHBOARD
+   - Classificação (hierárquica, indentada por nível)
+   - Valor Realizado Ano Atual
+   - Valor Realizado Ano Anterior
+   - Variação em R$ (absoluta)
+   - Variação em % (percentual)
+
+6. FILTROS (sidebar esquerda)
+   Todos os filtros ficam em uma coluna lateral esquerda (sidebar).
+   A tabela à direita reage dinamicamente a qualquer combinação de filtros.
+   - Mês (inmes): acumulado — ao selecionar mês X, soma inmes 0 até X.
+     Dropdown mostra APENAS meses fechados (via mesfechado).
+     Padrão: último mês fechado.
+   - UG (coug/noug): filtra por Unidade Gestora. Dropdown mostra
+     código + nome (ex: "440905 - FUNDO DE APAR..."). Padrão: Todas.
+   - Fonte: filtra por fonte de recurso agrupada (4 primeiros dígitos).
+     JOIN com {SCHEMA_ANO}.fonterecurso para obter cofontefederal e nofonte.
+     Exibição no dropdown: "cofontefederal.fonte_agrupada — nofonte"
+     Ex: fonte 121028584 → agrupada 1210, cofontefederal 1700 → "1700.1210 — nome"
+     O nofonte vem da fonte completada com zeros (1210 + '00000' = 121000000).
+     Fontes com mesmos 4 primeiros dígitos são somadas (ex: 121028584 e 121029875 → 1210).
+     Padrão: Todas.
+   - Intraorçamentárias (radio buttons):
+     ( ) Todas — mostra todas as receitas
+     ( ) Somente Intra — apenas receitas com categoria_economica
+         começando em 7 ou 8
+     ( ) Excluir Intra — remove receitas 7 e 8
+     Nota: receitas intraorçamentárias são aquelas cuja categoria
+     econômica inicia em 7 (Receitas Correntes Intra) ou 8
+     (Receitas de Capital Intra).
+   - Categoria Econômica (radio buttons):
+     ( ) Todas — mostra todas as categorias
+     ( ) Corrente — apenas receitas correntes (categoria_economica
+         começando em 1 ou 7, ou seja, corrente regular + corrente intra)
+     ( ) Capital — apenas receitas de capital (categoria_economica
+         começando em 2 ou 8, ou seja, capital regular + capital intra)
+     Este filtro é dinâmico/cascata como os demais (integrado no
+     filtrarExcluindo com chave 'catecon').
+   - Espécie da Receita: filtra por espécie específica. Padrão: Todas.
+   - Detalhamento (checkbox):
+     [ ] Tipo da Receita — expande tipos sob cada espécie.
+         Cada tipo exibe um ▸ clicável que abre/recolhe as UGs
+         que arrecadaram aquele tipo (dropdown inline na tabela).
+
+6.1 FILTROS DINÂMICOS / CASCATA
+   TODOS os filtros são dinâmicos (cascading filters). Quando qualquer
+   filtro é selecionado, os demais dropdowns se repopulam mostrando
+   apenas valores compatíveis com os filtros ativos.
+   Implementação via função filtrarExcluindo(excluir):
+   - Para cada dropdown, filtra os REGISTROS por TODOS os filtros
+     EXCETO o próprio dropdown.
+   - Extrai valores únicos do resultado para popular aquele dropdown.
+   - Preserva a seleção anterior se ainda existir nos novos valores.
+   Ordem de repopulação: UG → Fonte → Espécie.
+
+7. EXERCÍCIO DINÂMICO
+   - O SQL traz o ano corrente e o anterior via EXTRACT(YEAR FROM SYSDATE).
+   - Em Python, o placeholder {SCHEMA_ANO} é substituído por mil{ano}.
+   - Não usar anos fixos no SQL.
+   - Sem ponto-e-vírgula (;) no final do SQL.
+
+7.1 CONTROLE DE MÊS FECHADO (mesfechado)
+   - A tabela {SCHEMA_ANO}.mesfechado registra quais meses foram
+     fechados/encerrados no exercício.
+   - O dashboard só exibe dados de meses que constam nessa tabela.
+   - Lógica de fallback para virada de ano:
+     Se no início de um novo ano não houver NENHUM registro em
+     mil{ano_novo}.mesfechado, o sistema recua automaticamente:
+     → Usa mil{ano_anterior}.mesfechado para saber os meses fechados
+     → Compara ano_anterior vs ano_anterior-1
+       (ex: em jan/2027 sem fechamento, compara 2025 vs 2026)
+     → Exibe aviso visual amarelo no dashboard.
+   - Essa lógica é tratada no Python (gerar_receita.py), não no SQL.
+
+8. IDENTIDADE VISUAL
+   - Usar o brasão do DF contido em tools/Brasão_do_Distrito_Federal_Brasil.png
+   - Cabeçalho:
+     "Governo do Distrito Federal — Secretaria de Estado de Economia"
+     "Contadoria Geral do DF — Balanço Orçamentário — Receita Orçamentária"
+   - Paleta: verde escuro (#006633), branco (#FFFFFF),
+     cinza escuro (#333333), cinza claro (#F5F5F5)
+   - Layout responsivo (desktop e mobile)
+   - Sidebar de filtros à esquerda, tabela à direita
+
+9. FORMATO DE VALORES
+   - Moeda brasileira: R$ com separador de milhar (.) e decimal (,)
+   - Valores negativos em vermelho
+   - Variação positiva em verde, negativa em vermelho
+   - Totalizadores em negrito
+
+9.1 REGRA DE EXIBIÇÃO — VALORES ZERO NO ANO ATUAL
+   - Se o valor do ano atual de qualquer linha for zero, essa linha
+     NÃO aparece na tabela. Vale para todos os níveis hierárquicos
+     (categorias, origens, espécies, tipos) e para UGs expandidas.
+   - Consequência: nunca haverá variação de -100%.
+   - Regra compartilhada com o dashboard de despesa (ver CLAUDE.md).
+
+10. GERAÇÃO DE PDF
+    - Botão "Gerar PDF" na sidebar, abaixo dos filtros.
+    - Usa window.print() com CSS @media print:
+      → Orientação paisagem
+      → Esconde a sidebar de filtros
+      → Esconde cards e gráficos (somente tabela no PDF)
+      → Exibe um resumo dos filtros ativos no topo do PDF
+        (mês, UG, fonte, espécie, detalhamento, anos comparados)
+      → Mantém brasão, cabeçalho e cores no PDF
+      → Preserva cores de fundo (print-color-adjust: exact)
+    - O usuário salva como PDF pelo diálogo do navegador.
+
+11. SAÍDAS
+    - Dashboard HTML interativo → salvar em output/
+    - PDF gerado pelo botão do dashboard (via navegador)
+    - Futuro: relatório PDF complementar via reportlab
+
+12. ARQUITETURA DO DASHBOARD
+    - Python (gerar_receita.py): busca dados Oracle, filtra meses fechados,
+      exporta dados granulares como JSON embutido no HTML.
+    - JavaScript (embutido no HTML): faz toda a filtragem (mês, UG,
+      fonte, espécie), monta a tabela hierárquica dinamicamente.
+    - O HTML é autocontido (CSS/JS inline, brasão em base64).
+
+13. CARDS DE RESUMO (linha centralizada acima dos gráficos)
+    Três cards centralizados (justify-content: center) com max-width
+    280px, exibem indicadores sintéticos reativos aos filtros.
+    Valores abreviados (mi, bi, mil) para melhor leitura:
+    - PREVISÃO ATUALIZADA: soma saldo onde cocontacontabil BETWEEN
+      '521100000' e '521299999' (classe 5, ano atual). Abaixo mostra
+      Previsão Inicial (521100000-521199999) e o % de variação.
+    - REALIZADO ATÉ [mês]: soma realizado (classe 6) do ano atual até
+      o mês selecionado. Inclui referência ao bimestre e comparação
+      com o ano anterior em %.
+    - FALTA ARRECADAR: Realizado − Previsão Atualizada. Quando negativo
+      (vermelho), mostra "Faltam X% da previsão". Quando positivo (verde),
+      mostra "Superou a previsão em X%".
+
+13.1 EXECUÇÃO TOTAL (velocímetro + gráfico de barras, lado a lado)
+    Abaixo dos 3 cards, uma div .graficos-topo exibe lado a lado:
+    - GRÁFICO DE BARRAS (esquerda, flex:1): Realizado por Espécie.
+      Valores SEMPRE à direita da barra (span.bar-valor-fora), nunca
+      dentro. Top 4 espécies por valor absoluto.
+    - VELOCÍMETRO SVG (direita, 320px): Execução = (Realizado / Previsão Atualizada) × 100.
+
+      Implementação SVG puro, equivalente ao gauge ECharts de referência:
+      - Arco de 260° (startAngle=140° SVG → endAngle=40° SVG, clockwise)
+      - 4 segmentos coloridos: vermelho (0-30%), laranja (30-60%),
+        verde claro (60-80%), verde escuro (80-100%)
+      - Ticks brancos separadores a cada 20% por cima do arco
+      - Ticks menores a cada 10%
+      - Labels de percentual (0%–100%) fora do arco
+      - Ponteiro (needle): triângulo SVG desenhado apontando para 0° (direita),
+        girado via animateTransform de angFromPct(0) até angFromPct(valor)
+        com duração 1.2s e easing spline (0.4 0 0.2 1)
+      - Círculo central colorido + ponto branco interno
+      - Cor do ponteiro dinâmica: vermelho <30%, laranja 30-60%,
+        verde claro 60-80%, verde escuro ≥80%
+      - Abaixo do SVG: valor numérico (ex: "45,32%") + subtítulo
+        "Previsão Atualizada: R$ XX bi"
+
+14. GRÁFICOS
+    Todos os gráficos são dinâmicos e reagem aos filtros da sidebar.
+    Gráficos NÃO aparecem na impressão/PDF (display:none no @media print).
+    - Gráfico de Barras Horizontais (dentro de .graficos-topo, ao lado
+      do velocímetro): Realizado por Espécie (ano atual). Top 4.
+      Valores sempre fora das barras (span.bar-valor-fora à direita).
+    - Treemap (acima da tabela): Composição da Receita por Tipo (ano atual).
+      Tamanho proporcional ao valor absoluto. Cores distintas.
+    - Gráfico de Linhas (ABAIXO da tabela): Evolução Mensal do Realizado
+      Acumulado (ano atual vs ano anterior). Linha sólida = atual,
+      tracejada = anterior. Eixo Y em milhões (M). Valores acumulados.
+
+14.1 HIERARQUIA INTELIGENTE DA TABELA
+    - Nível 1: Categoria Econômica (sempre exibido)
+    - Nível 2: Origem da Receita (sempre exibido)
+    - Nível 3: Espécie da Receita — OMITIDO quando a origem possui
+      apenas 1 espécie (ex: Receita Agropecuária, Receita Industrial).
+      Exibido quando há múltiplas espécies (ex: Receita de Serviços).
+    - Nível 4: Tipo da Receita (exibido se checkbox "Tipo" ativo).
+      Quando a espécie é omitida, o tipo sobe para nível 3 visualmente.
+
+14.2 DROPDOWN DE UGs POR TIPO
+    Ao exibir tipos, cada linha de tipo mostra um ▸ clicável.
+    Ao clicar, expande linhas mostrando todas as UGs que arrecadaram
+    aquele tipo de receita (código + nome), com valores de realizado
+    atual, anterior, variação R$ e variação %. Clicar novamente recolhe.
+
+15. DADOS DE PREVISÃO NO JSON
+    O Python (processar_receita) exporta dois conjuntos de registros:
+    - registros: dados realizado (classe 6) — usado para tabela e gráficos
+    - registros_previsao: dados previsão (classe 5) — usado para cards
+      Cada registro de previsão inclui campo tipo_previsao: 'inicial'
+      (521100000-521199999) ou 'atualizacao' (521200000-521299999).
+    O JavaScript aplica os mesmos filtros (mês, UG, fonte, intra, espécie)
+    a ambos os conjuntos para manter consistência.
+
+16. NAVEGAÇÃO
+    - Botão "Índice" no canto direito do cabeçalho verde (.btn-voltar).
+      Link para index.html (página índice com botões Receita/Despesa).
+      Estilo: fundo semitransparente branco, ícone SVG seta ←, hover
+      mais claro. Escondido na impressão (display:none em @media print).
+
+17. OBSERVAÇÕES
+    - Começar simples e evoluir iterativamente.
+    - Sempre validar totais do dashboard contra o banco de dados.
+    - O dashboard será disponibilizado no site institucional.

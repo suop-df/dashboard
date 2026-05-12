@@ -1,0 +1,14 @@
+.env
+__pycache__/
+*.pyc
+
+# JSONs locais — não subir ao GitHub
+data/despesa.json
+data/rcl.json
+data/receita.json
+data/restos_a_pagar.json
+data/resultado_primario_nominal.json
+data/saldo_funcao_subfuncao.json
+
+# Planilha FCDF — dado local, não versionar
+data/UFIS-FCDFDespesadePessoal.xlsx

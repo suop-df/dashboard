@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balanço Orçamentário — ContDF/SEEC</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5; color: #333; font-size: 14px;
+            min-height: 100vh; display: flex; flex-direction: column;
+        }
+
+        /* CABEÇALHO */
+        .header {
+            background: #006633; color: #fff;
+            padding: 16px 24px; display: flex; align-items: center; gap: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header img { height: 64px; }
+        .header-text h1 { font-size: 17px; font-weight: 600; }
+        .header-text h2 { font-size: 13px; font-weight: 400; opacity: 0.9; margin-top: 2px; }
+
+        /* CONTEÚDO CENTRAL */
+        .conteudo {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 20px;
+        }
+        .titulo-pagina {
+            font-size: 22px; font-weight: 700; color: #006633;
+            margin-bottom: 8px; text-align: center;
+        }
+        .subtitulo-pagina {
+            font-size: 14px; color: #666; margin-bottom: 40px; text-align: center;
+        }
+
+        /* GRID DE BOTÕES */
+        .botoes {
+            display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;
+        }
+        .botao-dash {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 12px;
+            width: 220px; height: 160px;
+            background: #fff; border: 2px solid #e0e0e0; border-radius: 12px;
+            text-decoration: none; color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .botao-dash:hover {
+            border-color: #006633;
+            box-shadow: 0 4px 16px rgba(0,102,51,0.18);
+            transform: translateY(-2px);
+        }
+        .botao-dash:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0,102,51,0.12);
+        }
+        .botao-icone {
+            width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+        .botao-icone.receita { background: #e8f5e9; color: #2e7d32; }
+        .botao-icone.despesa { background: #fbe9e7; color: #c62828; }
+        .botao-titulo {
+            font-size: 15px; font-weight: 700; text-align: center;
+        }
+        .botao-desc {
+            font-size: 11px; color: #888; text-align: center; padding: 0 12px;
+        }
+
+        /* RODAPÉ */
+        .rodape {
+            text-align: center; padding: 16px;
+            font-size: 11px; color: #999;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        /* RESPONSIVO */
+        @media (max-width: 520px) {
+            .botoes { flex-direction: column; align-items: center; }
+            .botao-dash { width: 90%; max-width: 280px; }
+        }
+        .btn-voltar {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 13px; color: #fff; opacity: 0.85;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.35);
+            padding: 4px 12px; border-radius: 20px;
+            transition: opacity 0.2s; margin-left: auto;
+        }
+        .btn-voltar:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <img id="brasao" alt="Brasão do DF">
+    <div class="header-text">
+        <h1>Governo do Distrito Federal — Secretaria de Estado de Economia</h1>
+        <h2>SEEC/SEFIN - Secretaria Executiva de Finanças, Orçamento e Planejamento</h2>
+    </div>
+    <a href="../" class="btn-voltar" title="Voltar ao Início">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+        Voltar
+    </a>
+</div>
+
+<div class="conteudo">
+    <div class="titulo-pagina">Balanço Orçamentário</div>
+    <div class="subtitulo-pagina">Selecione o demonstrativo que deseja consultar</div>
+
+    <div class="botoes">
+        <a class="botao-dash" href="receita_orcamentaria.html">
+            <div class="botao-icone receita">&#9650;</div>
+            <div class="botao-titulo">Receita Orçamentária</div>
+            <div class="botao-desc">Previsão e arrecadação por categoria, origem e espécie</div>
+        </a>
+
+        <a class="botao-dash" href="despesa_orcamentaria.html">
+            <div class="botao-icone despesa">&#9660;</div>
+            <div class="botao-titulo">Despesa Orçamentária</div>
+            <div class="botao-desc">Empenho, liquidação e pagamento por categoria e GND</div>
+        </a>
+    </div>
+</div>
+
+<script>
+// Carrega o brasão da mesma pasta (tools/) convertendo para base64
+// Como o index é estático e autocontido, tentamos carregar o brasão via fetch
+// Fallback: funciona sem imagem se o brasão não estiver acessível
+(function() {
+    // Tenta carregar o brasão do caminho relativo
+    var img = document.getElementById('brasao');
+    // O brasão será injetado pelo script Python ao gerar, ou usa path relativo
+    img.src = '../tools/Brasão_do_Distrito_Federal_Brasil.png';
+    img.onerror = function() {
+        // Se não encontrar pelo caminho relativo, esconde a imagem
+        img.style.display = 'none';
+    };
+})();
+</script>
+
+</body>
+</html>

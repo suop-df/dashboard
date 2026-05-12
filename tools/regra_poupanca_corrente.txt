@@ -1,0 +1,53 @@
+RECEITA CORRENTE = (COCONTACONTABIL ENTRE 621200000 AND 621390199) AND GND IN (1,7)
+
+DESPESA CORRENTE = [DESPESAS LIQUIDADAS]+[RPNP Inscrito]-[RPNP Cancelado]
+
+DESPESAS LIQUIDADAS: SUBSTR(COCONTACONTABIL,1,7) IN (6221303,6221304,6221307) AND GND IN (1,2,3),  SUM(VACREDITO-VADEBITO)
+RPNP Inscrito: COCONTACONTABIL IN (631100000, 631200000) AND GND IN (1,2,3) AND INMES=0, SUM(VACREDITO-VADEBITO) 
+RPNP Cancelado: COCONTACONTABIL IN (631900000) AND GND IN (1,2,3,7), SUM(VACREDITO-VADEBITO) 
+
+POUPANCA CORRENTE = [Despesa Corrente]/[Receita Corrente] em % com duas casas decimais
+
+
+Art. 167-A, CF:
+Poupança Corrente = (Despesas Correntes Últimos 12 Meses + RPNP Inscritos no Exercício - RPNP Cancelados no Exercício)/Receita Corrente Últimos 12 Meses
+
+
+
+REGRAS GERAIS 
+=============
+o Dashboard dos Restos a Pagar deve seguir o mesmo modelo dos outros em termos de cores e leiaute. Além disso, deve:
+1. conter seleção por categoria econômica. Exemplo
+	3.  	Despesas Correntes
+	4.  	Despesas de Capital
+2. conter seleção por GND. Exemplo: 
+
+	1	PESSOAL E ENCARGOS SOCIAIS                        
+	2	JUROS E ENCARGOS DA DÍVIDA                        
+	3	OUTRAS DESPESAS CORRENTES                         
+	4	INVESTIMENTO                                      
+	5	INVERSÕES FINANCEIRAS                             
+	6	AMORTIZAÇÃO DA DÍVIDA                             
+	7	RESERVA ORÇAMENTÁRIA DO RPPS                      
+	9	RESERVA DE CONTINGÊNCIA                           
+3. Seleção por Unidade Gestora. Exemplo:
+	180101	SECRETARIA DE DESENVOLVIMENTO SOCIAL DO DF        
+4. Conter seleção por ANO, com um gráfico que compare todos os anos
+
+REGRAS DAS MÉTRICAS/MEDIDAS
+===========================
+RPNP Inscrito: COCONTACONTABIL IN (631100000;631200000),  INMES=0, SUM(VACREDITO-VADEBITO) 
+RPP Inscrito: COCONTACONTABIL IN (632110100,632110300),  INMES=0, SUM(VACREDITO-VADEBITO) 
+RAP Inscrito: [RPNP Inscrito + RPP Inscrito]
+
+RPNP Cancelado: COCONTACONTABIL IN (631900000), SUM(VACREDITO-VADEBITO) 
+RPP Cancelado: COCONTACONTABIL IN (632900000),  SUM(VACREDITO-VADEBITO) 
+RAP Cancelado: [RPNP Cancelado + RPP Cancelado]
+
+RPNP Pago: COCONTACONTABIL IN (631400000,631820000), SUM(VACREDITO-VADEBITO) 
+RPP Pago: COCONTACONTABIL IN (632210100,632210200,632210300,632210400),  SUM(VACREDITO-VADEBITO) 
+RAP Pago: RPNP Pago + RPP Pago]
+
+RPNP a Pagar: COCONTACONTABIL IN (631100000,631200000,631300000,631810000), SUM(VACREDITO-VADEBITO)
+RPP a Pagar: COCONTACONTABIL IN (632110100,632110300,632110400),  SUM(VACREDITO-VADEBITO)
+RAP a Pagar: [RPNP a Pagar + RPP a Pagar]

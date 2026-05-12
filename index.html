@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dados Fiscais - Sefin/SEEC</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5; color: #333; font-size: 14px;
+            min-height: 100vh; display: flex; flex-direction: column;
+        }
+        .header {
+            background: #006633; color: #fff;
+            padding: 16px 24px; display: flex; align-items: center; gap: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header img { height: 64px; }
+        .header-text { flex: 1; }
+        .header-text h1 { font-size: 17px; font-weight: 600; }
+        .header-text h2 { font-size: 13px; font-weight: 400; opacity: 0.9; margin-top: 2px; }
+        .conteudo {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 20px;
+        }
+        .titulo-pagina { font-size: 22px; font-weight: 700; color: #006633; margin-bottom: 8px; text-align: center; }
+        .subtitulo-pagina { font-size: 14px; color: #666; margin-bottom: 40px; text-align: center; }
+        .botoes { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+        .botao-dash {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 12px;
+            width: 220px; height: 160px;
+            background: #fff; border: 2px solid #e0e0e0; border-radius: 12px;
+            text-decoration: none; color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: all 0.2s ease; cursor: pointer;
+        }
+        .botao-dash:hover { border-color: #006633; box-shadow: 0 4px 16px rgba(0,102,51,0.18); transform: translateY(-2px); }
+        .botao-dash:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(0,102,51,0.12); }
+        .botao-icone { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .botao-icone.receita { background: #e8f5e9; color: #2e7d32; }
+        .botao-icone.funcao  { background: #e3f2fd; color: #1565c0; }
+        .botao-titulo { font-size: 15px; font-weight: 700; text-align: center; }
+        .botao-desc { font-size: 11px; color: #888; text-align: center; padding: 0 12px; }
+        .rodape { text-align: center; padding: 16px; font-size: 11px; color: #999; border-top: 1px solid #e0e0e0; }
+        @media (max-width: 520px) {
+            .botoes { flex-direction: column; align-items: center; }
+            .botao-dash { width: 90%; max-width: 280px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <img id="brasao" alt="Brasão do DF">
+    <div class="header-text">
+        <h1>Governo do Distrito Federal — Secretaria de Estado de Economia</h1>
+        <h2>SEEC/SEFIN - Secretaria Executiva de Finanças, Orçamento e Planejamento</h2>
+    </div>
+</div>
+
+<div class="conteudo">
+    <div class="titulo-pagina">Dashboards Fiscais</div>
+    <div class="subtitulo-pagina">Selecione o demonstrativo que deseja consultar</div>
+    <div class="botoes">
+        <a class="botao-dash" href="balanco_orcamentario/index.html">
+            <div class="botao-icone receita">&#128196;</div>
+            <div class="botao-titulo">Balanço Orçamentário</div>
+            <div class="botao-desc">Receita e Despesa Orçamentária do Distrito Federal</div>
+        </a>
+        <a class="botao-dash" href="rcl/index.html">
+            <div class="botao-icone" style="background:#f3e8ff;color:#7e22ce;">&#128200;</div>
+            <div class="botao-titulo">Receita Corrente Líquida</div>
+            <div class="botao-desc">Demonstrativo da RCL do Distrito Federal</div>
+        </a>
+        <a class="botao-dash" href="restos_a_pagar/index.html">
+            <div class="botao-icone" style="background:#fef3c7;color:#d97706;">&#128203;</div>
+            <div class="botao-titulo">Restos a Pagar</div>
+            <div class="botao-desc">RAP Inscrito, Pago, Cancelado e Saldo a Pagar por exercício</div>
+        </a>
+        <a class="botao-dash" href="resultado_primario_nominal/index.html">
+            <div class="botao-icone" style="background:#fce7f3;color:#9d174d;">&#128200;</div>
+            <div class="botao-titulo">Resultado Primário e Nominal</div>
+            <div class="botao-desc">Resultado Primário e Nominal Acima da Linha</div>
+        </a>
+        <a class="botao-dash" href="poupanca_corrente/index.html">
+            <div class="botao-icone" style="background:#e0f2fe;color:#0369a1;">&#128290;</div>
+            <div class="botao-titulo">Poupança Corrente</div>
+            <div class="botao-desc">Art. 167-A da CF — Despesas Correntes / Receita Corrente (12 meses)</div>
+        </a>
+    </div>
+</div>
+
+<script>
+(function() {
+    var img = document.getElementById('brasao');
+    img.src = 'tools/Brasão_do_Distrito_Federal_Brasil.png';
+    img.onerror = function() { img.style.display = 'none'; };
+})();
+</script>
+</body>
+</html>

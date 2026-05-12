@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restos a Pagar — GDF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1e293b;min-height:100vh;}
+:root{
+  --radius:12px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.1);
+  --accent-900:#1b5e20;--accent-800:#2e7d32;--accent-700:#006633;--accent-600:#388e3c;
+  --accent-500:#43a047;--accent-400:#66bb6a;--accent-300:#a5d6a7;--accent-200:#c8e6c9;
+  --accent-100:#e8f5e9;--accent-50:#f1f8e9;
+  --gradient:linear-gradient(135deg,#1b5e20 0%,#006633 40%,#2e7d32 100%);
+  --red-600:#dc2626;--red-100:#fee2e2;--red-900:#991b1b;
+  --blue-600:#2563eb;--blue-100:#dbeafe;--blue-900:#1e3a8a;
+}
+
+/* ═══ HEADER ═══ */
+.header{background:var(--gradient);color:#fff;padding:16px 28px;display:flex;align-items:center;gap:24px;box-shadow:var(--shadow-lg);position:relative;z-index:200}
+.header img{height:52px;flex-shrink:0}
+.header-titles{flex:1}
+.header-titles h1{font-size:1rem;font-weight:700;letter-spacing:.3px;line-height:1.3}
+.header-titles .subtitle{font-size:.75rem;opacity:.75;font-weight:400;margin-top:2px}
+.data-atualizacao{font-size:.7rem;opacity:.75;margin-top:4px;font-weight:400}
+.period-badge{background:rgba(255,255,255,.15);padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:600;flex-shrink:0}
+.btn-voltar{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;transition:background .2s;flex-shrink:0}
+.btn-voltar:hover{background:rgba(255,255,255,.25)}
+
+/* ═══ FILTER BAR ═══ */
+.filter-bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow-sm);position:sticky;top:0;z-index:100}
+.filter-group{display:flex;align-items:center;gap:8px}
+.filter-label{font-size:.68rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.filter-select{font-family:inherit;font-size:.78rem;padding:5px 10px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;cursor:pointer;transition:border-color .15s}
+.filter-select:focus{border-color:var(--accent-500);outline:none}
+#f-ug{min-width:260px}
+.filter-divider{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
+.btn-reset{font-family:inherit;font-size:.72rem;padding:5px 12px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#64748b;cursor:pointer;transition:all .15s}
+.btn-reset:hover{border-color:var(--accent-500);color:var(--accent-700)}
+
+/* ═══ CONTENT ═══ */
+.content{padding:20px 28px 40px}
+
+/* ═══ KPI ROW ═══ */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi-col{display:flex;flex-direction:column;gap:8px}
+.kpi-card{background:#fff;border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow-sm);border-left:4px solid var(--accent-500);transition:box-shadow .2s,transform .2s;position:relative;overflow:hidden}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-card::after{content:'';position:absolute;top:-30px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.4;background:var(--accent-100)}
+.kpi-card.blue{border-left-color:#2563eb}.kpi-card.blue::after{background:#dbeafe}
+.kpi-card.red{border-left-color:#dc2626}.kpi-card.red::after{background:#fee2e2}
+.kpi-card.amber{border-left-color:#d97706}.kpi-card.amber::after{background:#fef3c7}
+.kpi-card.accent{background:var(--gradient);color:#fff;border-left-color:transparent}
+.kpi-card.accent::after{background:rgba(255,255,255,.1)}
+.kpi-label{font-size:.68rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.kpi-card.accent .kpi-label{color:rgba(255,255,255,.75)}
+.kpi-value{font-size:1.45rem;font-weight:800;color:var(--accent-900);line-height:1.1;margin-bottom:4px}
+.kpi-card.blue .kpi-value{color:var(--blue-900)}
+.kpi-card.red  .kpi-value{color:var(--red-900)}
+.kpi-card.amber .kpi-value{color:#92400e}
+.kpi-card.accent .kpi-value{color:#fff}
+.kpi-sub{font-size:.68rem;color:#94a3b8;font-weight:500;line-height:1.5}
+.kpi-card.accent .kpi-sub{color:rgba(255,255,255,.65)}
+/* sub-cards RPNP / RPP */
+.kpi-sub-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kpi-sub-card{background:#fff;border-radius:8px;padding:10px 12px;box-shadow:var(--shadow-sm);border-left:3px solid var(--accent-300)}
+.kpi-sub-card.blue{border-left-color:#93c5fd}
+.kpi-sub-card.red{border-left-color:#fca5a5}
+.kpi-sub-card.accent{border-left-color:var(--accent-400)}
+.kpi-sub-label{font-size:.6rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.kpi-sub-value{font-size:.88rem;font-weight:700;color:#334155}
+
+/* ═══ CHARTS ═══ */
+.chart-full{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;margin-bottom:20px;transition:box-shadow .2s}
+.chart-full:hover{box-shadow:var(--shadow-md)}
+.charts-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;transition:box-shadow .2s}
+.chart-panel:hover{box-shadow:var(--shadow-md)}
+.chart-panel-title{font-size:.82rem;font-weight:700;color:var(--accent-900);margin-bottom:4px}
+.chart-panel-subtitle{font-size:.68rem;color:#94a3b8;margin-bottom:14px;font-weight:500}
+
+/* ═══ TABLE ═══ */
+.table-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.table-panel-header{padding:16px 22px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.table-panel-header h3{font-size:.85rem;font-weight:700;color:var(--accent-900)}
+.table-search{font-family:inherit;font-size:.78rem;padding:5px 12px;border:1.5px solid #e2e8f0;border-radius:8px;width:250px;transition:border-color .15s}
+.table-search:focus{border-color:var(--accent-500);outline:none}
+.table-wrap{overflow-x:auto;max-height:440px;overflow-y:auto}
+table.rap{width:100%;border-collapse:collapse;font-size:.72rem}
+table.rap th{background:var(--accent-50);color:var(--accent-900);text-align:center;padding:8px 10px;border-bottom:2px solid var(--accent-200);font-size:.63rem;font-weight:700;white-space:nowrap;position:sticky;top:0;text-transform:uppercase;letter-spacing:.3px;z-index:1}
+table.rap th.left{text-align:left}
+table.rap td{padding:6px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap}
+table.rap td.name{text-align:left;white-space:normal;min-width:240px;max-width:360px;font-size:.71rem}
+table.rap td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.rap td.pct{text-align:center;font-weight:600}
+table.rap tr.total-row td{background:var(--accent-100);font-weight:700;color:var(--accent-900);border-top:2px solid var(--accent-300)}
+table.rap tr:hover:not(.total-row) td{background:var(--accent-50)}
+
+/* ═══ TABELA TAXA CANCELAMENTO ═══ */
+table.taxa-canc{width:100%;border-collapse:collapse;font-size:.75rem}
+table.taxa-canc th{background:var(--accent-50);color:var(--accent-900);padding:9px 14px;border-bottom:2px solid var(--accent-200);font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;position:sticky;top:0;z-index:1}
+table.taxa-canc th:first-child{text-align:left}
+table.taxa-canc th:not(:first-child){text-align:right}
+table.taxa-canc td{padding:8px 14px;border-bottom:1px solid #f1f5f9;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.taxa-canc td:first-child{text-align:left;font-weight:700;color:var(--accent-900)}
+table.taxa-canc td:not(:first-child){text-align:right}
+table.taxa-canc td.pct{font-weight:700}
+table.taxa-canc tr:hover td{background:var(--accent-50)}
+
+/* ═══ FOOTER ═══ */
+.footer{text-align:center;padding:16px 28px;font-size:.68rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff;line-height:1.6;margin-top:8px}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.charts-row-2{grid-template-columns:1fr}}
+@media(max-width:768px){.kpi-row{grid-template-columns:1fr}.kpi-sub-row{grid-template-columns:1fr 1fr}.header{padding:12px 16px;flex-wrap:wrap}.content{padding:12px 16px}.filter-bar{padding:10px 16px}}
+@media print{.filter-bar{display:none}.kpi-card,.chart-panel,.chart-full,.table-panel{break-inside:avoid}.header{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <img id="brasao" alt="Brasão do DF">
+  <div class="header-titles">
+    <h1>DISTRITO FEDERAL &middot; RESTOS A PAGAR</h1>
+    <div class="subtitle">Orçamento Fiscal e da Seguridade Social &middot; SEEC/SEFIN - Secretaria Executiva de Finanças, Orçamento e Planejamento</div>
+    <p class="data-atualizacao" id="data-atualizacao">Carregando dados...</p>
+  </div>
+  <div class="period-badge" id="period-badge">—</div>
+  <a href="../" class="btn-voltar">← Voltar</a>
+</div>
+
+<!-- ══ FILTER BAR ══ -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <span class="filter-label">Ano</span>
+    <select class="filter-select" id="f-ano" onchange="onFilter()"></select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <span class="filter-label">Categoria Econômica</span>
+    <select class="filter-select" id="f-cat" onchange="onFilter()"></select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <span class="filter-label">GND</span>
+    <select class="filter-select" id="f-gnd" onchange="onFilter()"></select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <span class="filter-label">Unidade Gestora</span>
+    <select class="filter-select" id="f-ug" onchange="onFilter()"></select>
+  </div>
+  <div class="filter-divider"></div>
+  <button class="btn-reset" onclick="resetFilters()">✕ Limpar filtros</button>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <!-- Inscrito -->
+    <div class="kpi-col">
+      <div class="kpi-card">
+        <div class="kpi-label">RAP Inscrito</div>
+        <div class="kpi-value" id="kpi-inscrito">—</div>
+        <div class="kpi-sub" id="kpi-inscrito-sub"></div>
+      </div>
+      <div class="kpi-sub-row">
+        <div class="kpi-sub-card">
+          <div class="kpi-sub-label">RPNP Inscrito</div>
+          <div class="kpi-sub-value" id="sub-rpnp-inscrito">—</div>
+        </div>
+        <div class="kpi-sub-card">
+          <div class="kpi-sub-label">RPP Inscrito</div>
+          <div class="kpi-sub-value" id="sub-rpp-inscrito">—</div>
+        </div>
+      </div>
+    </div>
+    <!-- Pago -->
+    <div class="kpi-col">
+      <div class="kpi-card blue">
+        <div class="kpi-label">RAP Pago</div>
+        <div class="kpi-value" id="kpi-pago">—</div>
+        <div class="kpi-sub" id="kpi-pago-sub"></div>
+      </div>
+      <div class="kpi-sub-row">
+        <div class="kpi-sub-card blue">
+          <div class="kpi-sub-label">RPNP Pago</div>
+          <div class="kpi-sub-value" id="sub-rpnp-pago">—</div>
+        </div>
+        <div class="kpi-sub-card blue">
+          <div class="kpi-sub-label">RPP Pago</div>
+          <div class="kpi-sub-value" id="sub-rpp-pago">—</div>
+        </div>
+      </div>
+    </div>
+    <!-- Cancelado -->
+    <div class="kpi-col">
+      <div class="kpi-card red">
+        <div class="kpi-label">RAP Cancelado</div>
+        <div class="kpi-value" id="kpi-cancelado">—</div>
+        <div class="kpi-sub" id="kpi-cancelado-sub"></div>
+      </div>
+      <div class="kpi-sub-row">
+        <div class="kpi-sub-card red">
+          <div class="kpi-sub-label">RPNP Cancelado</div>
+          <div class="kpi-sub-value" id="sub-rpnp-cancelado">—</div>
+        </div>
+        <div class="kpi-sub-card red">
+          <div class="kpi-sub-label">RPP Cancelado</div>
+          <div class="kpi-sub-value" id="sub-rpp-cancelado">—</div>
+        </div>
+      </div>
+    </div>
+    <!-- a Pagar -->
+    <div class="kpi-col">
+      <div class="kpi-card accent">
+        <div class="kpi-label">RAP a Pagar</div>
+        <div class="kpi-value" id="kpi-apagar">—</div>
+        <div class="kpi-sub" id="kpi-apagar-sub"></div>
+      </div>
+      <div class="kpi-sub-row">
+        <div class="kpi-sub-card accent">
+          <div class="kpi-sub-label">RPNP a Pagar</div>
+          <div class="kpi-sub-value" id="sub-rpnp-apagar">—</div>
+        </div>
+        <div class="kpi-sub-card accent">
+          <div class="kpi-sub-label">RPP a Pagar</div>
+          <div class="kpi-sub-value" id="sub-rpp-apagar">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart: Comparativo por Exercício -->
+  <div class="chart-full">
+    <div class="chart-panel-title">Comparativo por Exercício</div>
+    <div class="chart-panel-subtitle">RAP Inscrito, Pago, Cancelado e Saldo a Pagar — todos os exercícios disponíveis (R$ Milhões)</div>
+    <div id="chart-anos" style="width:100%;height:340px;"></div>
+  </div>
+
+  <!-- Charts Row 2 -->
+  <div class="charts-row-2">
+    <div class="chart-panel">
+      <div class="chart-panel-title">Taxa de Cancelamento — RPNP</div>
+      <div class="chart-panel-subtitle">RPNP Cancelado / RPNP Inscrito por exercício</div>
+      <div class="table-wrap" style="max-height:320px;">
+        <table class="taxa-canc">
+          <thead>
+            <tr>
+              <th>Ano</th>
+              <th>RPNP Inscrito</th>
+              <th>RPNP Cancelado</th>
+              <th>Cancelado/Inscrito</th>
+            </tr>
+          </thead>
+          <tbody id="taxa-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-panel-title">RPNP × RPP — Composição</div>
+      <div class="chart-panel-subtitle" id="sub-cat">Não Processados vs Processados — Inscrito e a Pagar (R$ Milhões)</div>
+      <div id="chart-cat" style="width:100%;height:320px;"></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-panel">
+    <div class="table-panel-header">
+      <h3>Resumo por Unidade Gestora</h3>
+      <input type="text" class="table-search" id="table-search"
+             placeholder="Buscar unidade gestora..." oninput="filterTable()">
+    </div>
+    <div class="table-wrap">
+      <table class="rap">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:240px;">Unidade Gestora</th>
+            <th>RAP Inscrito</th>
+            <th>RAP Pago</th>
+            <th>RAP Cancelado</th>
+            <th>RAP a Pagar</th>
+            <th>% Exec.</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ FOOTER ══ -->
+<div class="footer">
+  FONTE: SIAC — Sistema Integrado de Administração Financeira e Contábil<br>
+  Unidade de Informações Fiscais / Contadoria Geral do DF / SEFIN / SEEC
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CLASSIFICAÇÃO DAS CONTAS CONTÁBEIS
+// ═══════════════════════════════════════════════════════════════
+const CC = {
+  rpnpInscrito:  new Set([631100000, 631200000]),
+  rppInscrito:   new Set([632110100, 632110300]),
+  rpnpCancelado: new Set([631900000]),
+  rppCancelado:  new Set([632900000]),
+  rpnpPago:      new Set([631400000, 631820000]),
+  rppPago:       new Set([632210100, 632210200, 632210300, 632210400]),
+  rpnpAPagar:    new Set([631100000, 631200000, 631300000, 631810000]),
+  rppAPagar:     new Set([632110100, 632110300, 632110400]),
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════════════
+let ALL   = [];   // todos os registros
+let ANOS  = [];   // anos disponíveis em ordem crescente (para o gráfico)
+let cAnos, cCat;
+
+// ═══════════════════════════════════════════════════════════════
+// FILTRO
+// ═══════════════════════════════════════════════════════════════
+function getF() {
+  return {
+    ano: document.getElementById('f-ano').value,
+    cat: document.getElementById('f-cat').value,
+    gnd: document.getElementById('f-gnd').value,
+    ug:  document.getElementById('f-ug').value,
+  };
+}
+
+// Filtra registros; anoOverride substitui o filtro de ano (usado no gráfico por exercício)
+function filtered(anoOverride) {
+  const f = getF();
+  const ano = anoOverride !== undefined ? String(anoOverride) : f.ano;
+  return ALL.filter(r => {
+    if (ano  && String(r.ano)  !== ano)  return false;
+    if (f.cat && r.cat !== f.cat) return false;
+    if (f.gnd && r.gnd !== f.gnd) return false;
+    if (f.ug  && r.coug !== f.ug)  return false;
+    return true;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MÉTRICAS
+// ═══════════════════════════════════════════════════════════════
+function computeMetrics(recs) {
+  // INMES=0 → inscrição (saldo de abertura, leitura pontual)
+  // Cancelado / Pago / a Pagar → movimentos mensais (INMES 1-12): deve somar TODOS os meses
+  const maxInmes = recs.reduce((m, r) => Math.max(m, r.inmes), 0);
+  const r0  = recs.filter(r => r.inmes === 0);
+
+  function sum(arr, contas) {
+    return arr.filter(r => contas.has(r.cocontacontabil)).reduce((a, r) => a + r.saldo, 0);
+  }
+
+  const rpnpI = sum(r0,   CC.rpnpInscrito);
+  const rppI  = sum(r0,   CC.rppInscrito);
+  const rpnpC = sum(recs, CC.rpnpCancelado);
+  const rppC  = sum(recs, CC.rppCancelado);
+  const rpnpP = sum(recs, CC.rpnpPago);
+  const rppP  = sum(recs, CC.rppPago);
+  const rpnpA = sum(recs, CC.rpnpAPagar);
+  const rppA  = sum(recs, CC.rppAPagar);
+
+  return {
+    rapInscrito:  rpnpI + rppI,
+    rapCancelado: rpnpC + rppC,
+    rapPago:      rpnpP + rppP,
+    rapAPagar:    rpnpA + rppA,
+    rpnpInscrito: rpnpI, rppInscrito: rppI,
+    rpnpCancelado: rpnpC, rppCancelado: rppC,
+    rpnpPago: rpnpP, rppPago: rppP,
+    rpnpAPagar: rpnpA, rppAPagar: rppA,
+    maxInmes,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FORMATAÇÃO
+// ═══════════════════════════════════════════════════════════════
+function fmtBi(v) {
+  if (v == null || isNaN(v)) return '—';
+  const abs = Math.abs(v);
+  if (abs >= 1e9) return 'R$ ' + (v/1e9).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' bi';
+  if (abs >= 1e6) return 'R$ ' + (v/1e6).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' mi';
+  return 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtMi(v)  { return v == null ? 0 : +(v/1e6).toFixed(2); }
+function fmtPct(v) { return !v || isNaN(v) ? '—' : v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%'; }
+function fmtNum(v) {
+  if (!v || isNaN(v)) return '<span style="color:#cbd5e1">–</span>';
+  const s = Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return v < 0 ? '<span style="color:#ef4444">('+s+')</span>' : s;
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER KPIs
+// ═══════════════════════════════════════════════════════════════
+function renderKPIs(m) {
+  const pct = m.rapInscrito > 0 ? (m.rapPago / m.rapInscrito * 100) : 0;
+  const mes  = m.maxInmes > 0 ? 'ref. mês ' + m.maxInmes : 'inscrição';
+
+  // Cards principais
+  document.getElementById('kpi-inscrito').textContent  = fmtBi(m.rapInscrito);
+  document.getElementById('kpi-inscrito-sub').textContent = 'INMES = 0';
+
+  document.getElementById('kpi-pago').textContent      = fmtBi(m.rapPago);
+  document.getElementById('kpi-pago-sub').textContent  = mes;
+
+  document.getElementById('kpi-cancelado').textContent = fmtBi(m.rapCancelado);
+  document.getElementById('kpi-cancelado-sub').textContent = mes;
+
+  document.getElementById('kpi-apagar').textContent    = fmtBi(m.rapAPagar);
+  document.getElementById('kpi-apagar-sub').textContent =
+    fmtPct(pct) + ' executado (pago / inscrito)';
+
+  // Sub-cards RPNP / RPP
+  document.getElementById('sub-rpnp-inscrito').textContent  = fmtBi(m.rpnpInscrito);
+  document.getElementById('sub-rpp-inscrito').textContent   = fmtBi(m.rppInscrito);
+  document.getElementById('sub-rpnp-pago').textContent      = fmtBi(m.rpnpPago);
+  document.getElementById('sub-rpp-pago').textContent       = fmtBi(m.rppPago);
+  document.getElementById('sub-rpnp-cancelado').textContent = fmtBi(m.rpnpCancelado);
+  document.getElementById('sub-rpp-cancelado').textContent  = fmtBi(m.rppCancelado);
+  document.getElementById('sub-rpnp-apagar').textContent    = fmtBi(m.rpnpAPagar);
+  document.getElementById('sub-rpp-apagar').textContent     = fmtBi(m.rppAPagar);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER GRÁFICO: COMPARATIVO POR EXERCÍCIO
+// ═══════════════════════════════════════════════════════════════
+function renderChartAnos() {
+  const anoSel = getF().ano;
+  const series = { i:[], p:[], c:[], a:[] };
+
+  for (const ano of ANOS) {
+    const m = computeMetrics(filtered(ano));
+    series.i.push(fmtMi(m.rapInscrito));
+    series.p.push(fmtMi(m.rapPago));
+    series.c.push(fmtMi(m.rapCancelado));
+    series.a.push(fmtMi(m.rapAPagar));
+  }
+
+  function mkSerie(name, data, cor, corSel) {
+    return {
+      name, type: 'bar', barMaxWidth: 38,
+      data: data.map((v, i) => ({
+        value: v,
+        itemStyle: { color: (anoSel && String(ANOS[i]) === anoSel) ? corSel : cor },
+      })),
+      emphasis: { focus: 'series' },
+    };
+  }
+
+  cAnos.setOption({
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow' },
+      formatter: params => {
+        let s = '<strong>' + params[0].name + '</strong><br/>';
+        params.forEach(p => {
+          s += p.marker + ' ' + p.seriesName + ': R$ ' +
+               p.value.toLocaleString('pt-BR',{minimumFractionDigits:1}) + ' mi<br/>';
+        });
+        return s;
+      },
+    },
+    legend: { top: 0, textStyle: { fontSize: 11, fontFamily: 'Inter' } },
+    grid: { left: 72, right: 20, top: 44, bottom: 30 },
+    xAxis: { type: 'category', data: ANOS.map(String), axisLabel: { fontSize: 12, fontFamily: 'Inter', fontWeight: 600 } },
+    yAxis: { type: 'value', axisLabel: { fontSize: 10, formatter: v => v.toLocaleString('pt-BR') + ' mi' }, splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } } },
+    series: [
+      mkSerie('RAP Inscrito',  series.i, '#a5d6a7', '#2e7d32'),
+      mkSerie('RAP Pago',      series.p, '#93c5fd', '#1d4ed8'),
+      mkSerie('RAP Cancelado', series.c, '#fca5a5', '#b91c1c'),
+      mkSerie('RAP a Pagar',   series.a, '#fcd34d', '#d97706'),
+    ],
+    animationDuration: 700,
+  }, true);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER TABELA: TAXA DE CANCELAMENTO RPNP POR EXERCÍCIO
+// ═══════════════════════════════════════════════════════════════
+function renderTaxaCancelamento() {
+  function fmtR(v) {
+    return v == null || isNaN(v)
+      ? '–'
+      : Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
+  }
+  function fmtP2(v) {
+    return v == null || isNaN(v)
+      ? '–'
+      : v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%';
+  }
+
+  const frags = ANOS.map(ano => {
+    const recs  = filtered(ano);
+    const r0    = recs.filter(r => r.inmes === 0);
+
+    function sum(arr, contas) {
+      return arr.filter(r => contas.has(r.cocontacontabil)).reduce((a, r) => a + r.saldo, 0);
+    }
+
+    const inscrito  = sum(r0,   CC.rpnpInscrito);
+    const cancelado = sum(recs, CC.rpnpCancelado);
+    const pct       = inscrito > 0 ? (cancelado / inscrito * 100) : 0;
+    const cor       = pct <= 10 ? '#16a34a' : pct <= 25 ? '#d97706' : '#dc2626';
+
+    return `<tr>
+      <td>${ano}</td>
+      <td>${fmtR(inscrito)}</td>
+      <td>${fmtR(cancelado)}</td>
+      <td class="pct" style="color:${cor}">${fmtP2(pct)}</td>
+    </tr>`;
+  });
+
+  document.getElementById('taxa-body').innerHTML = frags.join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER GRÁFICO: RPNP × RPP
+// ═══════════════════════════════════════════════════════════════
+function renderChartCat() {
+  const recs  = filtered();
+  const r0    = recs.filter(r => r.inmes === 0);
+
+  function sum(arr, contas) { return arr.filter(r => contas.has(r.cocontacontabil)).reduce((a,r) => a+r.saldo, 0); }
+
+  const dados = [
+    { value: fmtMi(sum(r0,   CC.rpnpInscrito)),  name: 'RPNP Inscrito',  itemStyle: { color: '#2e7d32' } },
+    { value: fmtMi(sum(r0,   CC.rppInscrito)),   name: 'RPP Inscrito',   itemStyle: { color: '#81c784' } },
+    { value: fmtMi(sum(recs, CC.rpnpAPagar)),    name: 'RPNP a Pagar',   itemStyle: { color: '#1d4ed8' } },
+    { value: fmtMi(sum(recs, CC.rppAPagar)),     name: 'RPP a Pagar',    itemStyle: { color: '#93c5fd' } },
+  ].filter(d => d.value > 0);
+
+  cCat.setOption({
+    tooltip: {
+      trigger: 'item',
+      formatter: p => '<strong>' + p.name + '</strong><br/>R$ ' +
+        p.value.toLocaleString('pt-BR',{minimumFractionDigits:1}) + ' mi (' + p.percent + '%)',
+    },
+    legend: { bottom: 0, textStyle: { fontSize: 10, fontFamily: 'Inter' } },
+    series: [{
+      type: 'pie', radius: ['38%', '70%'], center: ['50%','44%'],
+      label: {
+        fontSize: 11, fontFamily: 'Inter',
+        formatter: p => p.name + '\nR$ ' + p.value.toLocaleString('pt-BR',{minimumFractionDigits:1}) + ' mi',
+        lineHeight: 16,
+      },
+      labelLine: { length: 12, length2: 8 },
+      data: dados,
+      animationDuration: 700,
+    }],
+  }, true);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER GAUGE: TAXA DE CANCELAMENTO RPNP
+// ═══════════════════════════════════════════════════════════════
+function renderChartGauge(m) {
+  const pct = m.rpnpInscrito > 0
+    ? Math.min(+(m.rpnpCancelado / m.rpnpInscrito * 100).toFixed(2), 100)
+    : 0;
+
+  // cor: verde se baixo, amarelo se médio, vermelho se alto
+  const cor = pct <= 10 ? '#16a34a' : pct <= 25 ? '#d97706' : '#dc2626';
+
+  cGauge.setOption({
+    series: [{
+      type: 'gauge',
+      startAngle: 220, endAngle: -40,
+      min: 0, max: 100,
+      splitNumber: 5,
+      radius: '88%',
+      axisLine: {
+        lineStyle: {
+          width: 16,
+          color: [[0.1,'#16a34a'],[0.25,'#65a30d'],[0.5,'#d97706'],[1,'#dc2626']],
+        },
+      },
+      pointer: { itemStyle: { color: cor }, width: 5, length: '62%' },
+      axisTick:  { distance: -16, length: 5,  lineStyle: { color: '#fff', width: 1.5 } },
+      splitLine: { distance: -16, length: 16, lineStyle: { color: '#fff', width: 2 } },
+      axisLabel: { color: '#64748b', distance: 26, fontSize: 10, formatter: v => v + '%' },
+      detail: {
+        valueAnimation: true,
+        formatter: v => v.toFixed(1) + '%',
+        color: cor,
+        fontSize: 26,
+        fontWeight: 800,
+        fontFamily: 'Inter',
+        offsetCenter: [0, '72%'],
+      },
+      title: { show: false },
+      data: [{ value: pct }],
+      animationDuration: 1000,
+      animationEasingUpdate: 'cubicOut',
+    }],
+  }, true);
+
+  document.getElementById('gauge-legenda').innerHTML =
+    'Cancelado: <strong>' + fmtBi(m.rpnpCancelado) + '</strong><br>' +
+    'Inscrito: <strong>' + fmtBi(m.rpnpInscrito) + '</strong>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER TABLE
+// ═══════════════════════════════════════════════════════════════
+function renderTable() {
+  const recs  = filtered();
+  const r0    = recs.filter(r => r.inmes === 0);
+
+  const allInsc = new Set([...CC.rpnpInscrito, ...CC.rppInscrito]);
+  const allPago = new Set([...CC.rpnpPago,     ...CC.rppPago]);
+  const allCanc = new Set([...CC.rpnpCancelado,...CC.rppCancelado]);
+  const allAPag = new Set([...CC.rpnpAPagar,   ...CC.rppAPagar]);
+
+  const ugs = {};
+  function add(arr, contas, campo) {
+    for (const r of arr) {
+      if (!contas.has(r.cocontacontabil)) continue;
+      if (!ugs[r.coug]) ugs[r.coug] = { coug: r.coug, noug: r.noug || '', i: 0, p: 0, c: 0, a: 0 };
+      ugs[r.coug][campo] += r.saldo;
+    }
+  }
+  add(r0,   allInsc, 'i');
+  add(recs, allPago, 'p');
+  add(recs, allCanc, 'c');
+  add(recs, allAPag, 'a');
+
+  const rows = Object.values(ugs).sort((a, b) => b.i - a.i);
+  let [totI, totP, totC, totA] = [0, 0, 0, 0];
+  rows.forEach(r => { totI += r.i; totP += r.p; totC += r.c; totA += r.a; });
+
+  const frags = rows.map(r => {
+    const pct = r.i > 0 ? (r.p / r.i * 100) : 0;
+    const pctCol = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626';
+    return `<tr data-name="${esc(r.noug.toLowerCase())}">
+      <td class="name">${esc(r.coug)} &mdash; ${esc(r.noug)}</td>
+      <td class="num">${fmtNum(r.i)}</td>
+      <td class="num">${fmtNum(r.p)}</td>
+      <td class="num">${fmtNum(r.c)}</td>
+      <td class="num">${fmtNum(r.a)}</td>
+      <td class="pct" style="color:${pctCol}">${pct > 0 ? fmtPct(pct) : '–'}</td>
+    </tr>`;
+  });
+
+  const totPct = totI > 0 ? (totP / totI * 100) : 0;
+  frags.push(`<tr class="total-row">
+    <td class="name">TOTAL</td>
+    <td class="num">${fmtNum(totI)}</td>
+    <td class="num">${fmtNum(totP)}</td>
+    <td class="num">${fmtNum(totC)}</td>
+    <td class="num">${fmtNum(totA)}</td>
+    <td class="pct">${fmtPct(totPct)}</td>
+  </tr>`);
+
+  document.getElementById('tbl-body').innerHTML = frags.join('');
+}
+
+function filterTable() {
+  const term = document.getElementById('table-search').value.toLowerCase();
+  document.querySelectorAll('#tbl-body tr:not(.total-row)').forEach(tr => {
+    tr.style.display = (!term || (tr.dataset.name || '').includes(term)) ? '' : 'none';
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════════════════
+function renderAll() {
+  const recs = filtered();
+  const m    = computeMetrics(recs);
+  const f    = getF();
+  const anoLabel = f.ano || 'Todos os exercícios';
+
+  renderKPIs(m);
+  renderChartAnos();
+  renderTaxaCancelamento();
+  renderChartCat();
+  renderTable();
+
+  document.getElementById('sub-cat').textContent = 'RPNP vs RPP — ' + anoLabel + ' (R$ Milhões)';
+}
+
+function onFilter()    { renderAll(); }
+function resetFilters() {
+  ['f-ano','f-cat','f-gnd','f-ug'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('table-search').value = '';
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POPULAÇÃO DOS FILTROS
+// ═══════════════════════════════════════════════════════════════
+function buildFilters(data) {
+  const anos = [...new Set(data.map(r => r.ano))].sort((a,b) => a - b);
+  const cats = [...new Map(data.map(r => [r.cat, r.nocat])).entries()].sort((a,b) => a[0].localeCompare(b[0]));
+  const gnds = [...new Map(data.map(r => [r.gnd, r.nognd])).entries()].sort((a,b) => a[0].localeCompare(b[0]));
+  const ugs  = [...new Map(data.map(r => [r.coug, r.noug])).entries()].sort((a,b) => a[1].localeCompare(b[1]));
+
+  ANOS = anos; // crescente para o gráfico
+
+  function pop(id, items, labelFn, valFn) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">Todos</option>' +
+      items.map(it => `<option value="${esc(String(valFn(it)))}">${esc(String(labelFn(it)))}</option>`).join('');
+  }
+
+  pop('f-ano', anos, a => a, a => a);
+  pop('f-cat', cats, ([co, no]) => co + ' — ' + (no || co), ([co]) => co);
+  pop('f-gnd', gnds, ([co, no]) => co + ' — ' + (no || co), ([co]) => co);
+  pop('f-ug',  ugs,  ([co, no]) => co + ' — ' + (no || co), ([co]) => co);
+
+  // Default: último ano disponível
+  if (anos.length) document.getElementById('f-ano').value = String(anos[anos.length - 1]);
+
+  const minAno = anos[0], maxAno = anos[anos.length - 1];
+  document.getElementById('period-badge').textContent =
+    minAno === maxAno ? String(minAno) : minAno + ' — ' + maxAno;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function init(json) {
+  ALL = json.registros || [];
+
+  const elUp = document.getElementById('data-atualizacao');
+  if (json.atualizado_em) {
+    const d = new Date(json.atualizado_em);
+    elUp.textContent = 'Dados atualizados em: ' + d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+  } else { elUp.textContent = ''; }
+
+  buildFilters(ALL);
+
+  cAnos = echarts.init(document.getElementById('chart-anos'));
+  cCat  = echarts.init(document.getElementById('chart-cat'));
+
+  window.addEventListener('resize', () => { cAnos.resize(); cCat.resize(); });
+
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARREGAMENTO DO JSON.GZ
+// ═══════════════════════════════════════════════════════════════
+(function() {
+  // Brasão
+  var img = document.getElementById('brasao');
+  img.src = '../tools/Bras%C3%A3o_do_Distrito_Federal_Brasil.png';
+  img.onerror = function() { this.style.display = 'none'; };
+
+  // Loading overlay
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:sans-serif;font-size:1rem;color:#555;flex-direction:column;gap:12px';
+  ov.innerHTML = '<div style="font-size:2rem">&#9203;</div><div>Carregando dados dos Restos a Pagar&hellip;</div>';
+  document.body.appendChild(ov);
+
+  function fetchJsonGz(url) {
+    return fetch(url).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var ds = new DecompressionStream('gzip');
+      return new Response(r.body.pipeThrough(ds)).text();
+    }).then(function(t) { return JSON.parse(t); });
+  }
+
+  // Contingência: busca Supabase se GitHub Pages falhar
+  var SUPA_URL = 'https://otrlwfdtdrqpynemoexj.supabase.co';
+  var SUPA_KEY = 'sb_publishable_UKK5VWsrCXd1_zRR8tP16g_vySXJN5a';
+  var SUPA_PAGE = 1000;
+  function fetchSupabaseRAP() {
+    var all = [];
+    function next(offset) {
+      return fetch(SUPA_URL + '/rest/v1/restos_a_pagar?select=*&offset=' + offset + '&limit=' + SUPA_PAGE, {
+        headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+      }).then(function(r) {
+        if (!r.ok) throw new Error('Supabase HTTP ' + r.status);
+        return r.json();
+      }).then(function(data) {
+        all = all.concat(data);
+        return data.length === SUPA_PAGE ? next(offset + SUPA_PAGE) : all;
+      });
+    }
+    return next(0).then(function(data) {
+      var atualizado_em = data.reduce(function(m, r) { return r.atualizado_em > m ? r.atualizado_em : m; }, '');
+      return { registros: data, atualizado_em: atualizado_em };
+    });
+  }
+
+  fetchJsonGz('../data/gz/restos_a_pagar.json.gz?v=' + new Date().toISOString().slice(0,10))
+    .catch(function() { return fetchSupabaseRAP(); })
+    .then(function(json) {
+      document.body.removeChild(ov);
+      init(json);
+    })
+    .catch(function(err) {
+      ov.innerHTML = '<div style="font-size:2rem">&#9888;</div><div>Erro ao carregar dados: ' + err.message + '</div>';
+    });
+})();
+</script>
+</body>
+</html>
+                                                                                                                                                                                                                                                                                                                                           

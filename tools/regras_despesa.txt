@@ -1,0 +1,376 @@
+============================================================
+ REGRAS - DASHBOARD DESPESA ORÇAMENTÁRIA (Balanço Orçamentário)
+ Contadoria Geral do Distrito Federal - ContDF/SEEC
+ Criado em: 10/04/2026
+ Última atualização: 12/04/2026 (v10 — filtro Fontes de Superávit (checkbox) + filtro Categoria Econômica (Corrente/Capital), ambos integrados ao sistema de filtros dinâmicos/cascata)
+============================================================
+
+1. OBJETIVO
+   Exibir a execução da despesa orçamentária do GDF em formato de
+   dashboard HTML interativo, destinado a publicação no site
+   institucional da Contadoria Geral para usuários externos.
+
+2. FONTE DE DADOS
+   - Banco Oracle via database.py + .env (conexão pool, compartilhado com receita)
+   - SQL em db/queries/DESPESA.sql
+   - Tabelas:
+     mil2001.saldocontabil_ex (saldos contábeis) — schema FIXO
+     {SCHEMA_ANO}.classificacaoorcamentaria (nomes das classificações,
+       incluindo despesa, categoria, GND e subelemento)
+     {SCHEMA_ANO}.mesfechado (controle de meses fechados)
+     {SCHEMA_ANO}.fonterecurso (cofontefederal, nofonte)
+     {SCHEMA_ANO}.funcao (nome da função)
+     {SCHEMA_ANO}.subfuncao (nome da subfunção)
+   - Campos da saldocontabil_ex usados:
+     coexercicio, inmes, coug, noug, cocontacontabil, cocontacorrente,
+     conatureza, cofonte, cofuncao, cosubfuncao, vadebito, vacredito
+   - IMPORTANTE: o schema é dinâmico (ex: mil2026) e acompanha o ano.
+     O único schema fixo é mil2001 (saldocontabil_ex).
+
+3. CLASSIFICAÇÃO DA DESPESA — CONTAS CONTÁBEIS
+   As colunas do dashboard dependem da conta contábil:
+   - EMPENHADA: cocontacontabil BETWEEN '622130000' AND '622139999'
+     (todas as contas de empenho)
+   - LIQUIDADA: cocontacontabil IN ('622130300', '622130400', '622130700')
+     (subconjunto da empenhada — liquidação normal, restos, e anulação)
+   - PAGA: cocontacontabil = '622920104'
+     (execução do pagamento)
+   - AUTORIZADA (usada no gauge de execução):
+     cocontacontabil BETWEEN '522110000' AND '522129999'
+     + BETWEEN '522150000' AND '522159999'
+     + BETWEEN '522190000' AND '522199999'
+   - Cálculo do saldo:
+     Contas classe 5 (início com 5): vadebito - vacredito
+     Contas classe 6 (início com 6): vacredito - vadebito
+
+4. CLASSIFICAÇÃO ORÇAMENTÁRIA DA DESPESA (conatureza + cocontacorrente)
+   A classificação principal vem do campo conatureza:
+   - DESPESA (código completo): conatureza || '00'
+     → JOIN com classificacaoorcamentaria para obter NOME_DESPESA
+   - CATEGORIA ECONÔMICA: SUBSTR(conatureza, 1, 1) || '0000000'
+     → 3 = Despesas Correntes, 4 = Despesas de Capital
+     → JOIN para obter NOME_CATEGORIA_ECONOMICA
+   - GND (Grupo de Natureza da Despesa): SUBSTR(conatureza, 1, 2) || '000000'
+     → 31 = Pessoal, 32 = Juros, 33 = Outras Correntes, etc.
+     → JOIN para obter NOME_GND
+   - INTRA: SUBSTR(conatureza, 3, 2)
+     → '91' = despesa intraorçamentária
+     → qualquer outro valor = despesa NÃO intraorçamentária
+   - SUBELEMENTO: SUBSTR(cocontacorrente, 33, 8)
+     → 8 dígitos extraídos das posições 33 a 40 da conta corrente
+     → JOIN com classificacaoorcamentaria (coclasseorc) para obter
+       NOME_SUBELEMENTO (noclassificacao)
+     → Usado na expansão detalhada por despesa (ver seção 5)
+
+5. ESTRUTURA DA TABELA DE DESPESA
+   Três visões conforme seleção de filtros GND e Despesa:
+
+   VISÃO PADRÃO (nenhum GND selecionado):
+     Nível 1 - Categoria Econômica (nome_categoria_economica)
+       Nível 2 - GND — Grupo de Natureza da Despesa (nome_gnd)
+     Apenas 2 níveis hierárquicos.
+
+   VISÃO GND (GND selecionado, sem despesa):
+     Nível 1 - GND selecionado (nome_gnd)
+       Nível 2 - Classificação da Despesa (código - nome_despesa)
+     Expande as subdespesas (conatureza) do GND escolhido.
+
+   VISÃO DESPESA (GND + Despesa selecionados):
+     Nível 1 - GND (nome_gnd)
+       Nível 2 - Despesa (código - nome_despesa) com setinha ▸ de expand
+         Nível 3 - Subelementos (código - nome_subelemento) — ocultos por
+           padrão, expandem ao clicar na setinha da despesa.
+     Os subelementos são agregados separadamente por tipo de conta:
+       - Empenhada: isEmpenhada (622130000-622139999)
+       - Liquidada: isLiquidada (622130300/400/700)
+       - Paga: cocontacontabil = '622130400' (NÃO 622920104 — porque
+         622920104 não carrega cocontacorrente com subelemento preenchido;
+         a conta 622130400 possui o subelemento nos dígitos 33-40)
+     Cada quadro (Empenhada, Liquidada, Paga) tem seus próprios
+     subelementos independentes.
+
+   Ordenação: por código dentro de cada nível.
+
+6. LAYOUT DA TABELA — 3 QUADROS EMPILHADOS
+   A despesa é exibida em 3 quadros separados, um embaixo do outro:
+   - Quadro 1: DESPESA EMPENHADA
+   - Quadro 2: DESPESA LIQUIDADA
+   - Quadro 3: DESPESA PAGA
+   Cada quadro tem as mesmas 4 colunas:
+   - Classificação (hierárquica, indentada por nível)
+   - Ano Atual
+   - Ano Anterior
+   - Var % (variação percentual = (atual - anterior) / |anterior| × 100)
+   Cada quadro tem seu título estilizado (fundo verde escuro #004d26)
+   e sua própria linha TOTAL. Variação positiva em verde, negativa em
+   vermelho. O layout evita rolagem horizontal.
+
+7. FILTROS (sidebar esquerda)
+   Todos os filtros ficam em uma coluna lateral esquerda (sidebar).
+   A tabela à direita reage dinamicamente a qualquer combinação de filtros.
+   - Mês (inmes): acumulado — ao selecionar mês X, soma inmes 0 até X.
+     Dropdown mostra APENAS meses fechados (via mesfechado).
+     Padrão: último mês fechado.
+   - UG (coug/noug): filtra por Unidade Gestora. Dropdown mostra
+     código + nome (ex: "440905 - FUNDO DE APAR..."). Padrão: Todas.
+   - Fonte: filtra por fonte de recurso agrupada (4 primeiros dígitos).
+     JOIN com {SCHEMA_ANO}.fonterecurso para obter cofontefederal e nofonte.
+     Exibição no dropdown: "cofontefederal.fonte_agrupada — nofonte"
+     Fontes com mesmos 4 primeiros dígitos são somadas.
+     Padrão: Todas.
+   - Somente Fontes de Superávit (checkbox, acima do dropdown de Fonte):
+     Quando marcado, filtra apenas registros cuja cofonte (campo 'fonte',
+     9 dígitos) comece com 3, 4 ou 8 — ou seja, cofonte entre
+     300000000-499999999 ou 800000000-899999999. Este filtro é
+     dinâmico/cascata (chave 'superavit' no filtrarExcluindo) e afeta
+     o dropdown de Fonte, que passa a mostrar apenas fontes de superávit.
+     Usa função isFonteSuperavit(). Padrão: desmarcado.
+   - Intraorçamentárias (radio buttons):
+     ( ) Todas — mostra todas as despesas
+     ( ) Somente Intra — apenas despesas onde intra === '91'
+     ( ) Excluir Intra — remove despesas onde intra === '91'
+     NOTA: diferente da receita (que usa categoria econômica 7/8),
+     na despesa o critério de intra é o campo INTRA derivado do
+     SUBSTR(conatureza, 3, 2). Somente o código '91' indica
+     despesa intraorçamentária. Todos os demais valores são não intra.
+   - Categoria Econômica (radio buttons):
+     ( ) Todas — mostra todas as categorias
+     ( ) Corrente — apenas despesas correntes (conatureza entre 300000
+         e 399999, ou seja, primeiro dígito do campo despesa = '3')
+     ( ) Capital — apenas despesas de capital (conatureza entre 400000
+         e 499999, ou seja, primeiro dígito do campo despesa = '4')
+     Este filtro é dinâmico/cascata como os demais (integrado no
+     filtrarExcluindo com chave 'catecon'). Usa função isCatEconDesp().
+   - GND (Grupo de Natureza da Despesa): dropdown na sidebar,
+     populado com os GNDs existentes nos dados cujo código comece
+     com 3 ou 4 (Despesas Correntes e de Capital). Exibe somente o
+     nome (sem código), ex: "PESSOAL E ENCARGOS SOCIAIS".
+     Apenas um GND pode estar selecionado por vez. Quando selecionado,
+     as tabelas expandem mostrando as subdespesas daquele GND no
+     formato "código - nome" (ex: "31901100 - VENCIMENTOS E VANTAGENS
+     FIXAS - PESSOAL CIVIL"). Padrão: "Todos" (visão Categoria > GND).
+   - Despesa: dropdown vinculado ao GND. Aparece somente quando um GND
+     está selecionado. Populado dinamicamente com as despesas daquele
+     GND (formato "código - nome"). Quando uma despesa é selecionada,
+     as linhas de despesa ganham setinha ▸ para expandir subelementos.
+     Padrão: "Todas".
+   - Função (cofuncao/nofuncao): dropdown entre gráfico de barras e
+     tabela Empenhada. Populado com as funções existentes nos dados
+     (código zero-padded a 2 dígitos + nome). Quando selecionada, filtra
+     tabelas, cards e gráficos. Padrão: "Todas".
+   - Subfunção (cosubfuncao/nosubfuncao): dropdown ao lado da Função.
+     Aparece somente quando uma Função está selecionada. Populado
+     dinamicamente com as subfunções daquela função (código zero-padded
+     a 3 dígitos + nome). Padrão: "Todas".
+   - NÃO há checkbox de detalhamento (diferente da receita).
+   - NÃO há dropdown de UGs por tipo (diferente da receita).
+
+8.1 FILTROS DINÂMICOS / CASCATA
+   TODOS os filtros são dinâmicos (cascading filters). Quando qualquer
+   filtro é selecionado, os demais dropdowns se repopulam mostrando
+   apenas valores compatíveis com os filtros ativos.
+   Implementação via função filtrarExcluindo(excluir):
+   - Para cada dropdown, filtra os REGISTROS por TODOS os filtros
+     EXCETO o próprio dropdown.
+   - Extrai valores únicos do resultado para popular aquele dropdown.
+   - Preserva a seleção anterior se ainda existir nos novos valores.
+   Ordem de repopulação: UG → Fonte → GND → Despesa → Função → Subfunção.
+
+8. EXERCÍCIO DINÂMICO
+   - O SQL traz o ano corrente e o anterior via EXTRACT(YEAR FROM SYSDATE).
+   - Em Python, o placeholder {SCHEMA_ANO} é substituído por mil{ano}.
+   - Não usar anos fixos no SQL.
+   - Sem ponto-e-vírgula (;) no final do SQL.
+
+8.1 CONTROLE DE MÊS FECHADO (mesfechado)
+   - A tabela {SCHEMA_ANO}.mesfechado registra quais meses foram
+     fechados/encerrados no exercício.
+   - O dashboard só exibe dados de meses que constam nessa tabela.
+   - Lógica de fallback para virada de ano:
+     Se no início de um novo ano não houver NENHUM registro em
+     mil{ano_novo}.mesfechado, o sistema recua automaticamente:
+     → Usa mil{ano_anterior}.mesfechado para saber os meses fechados
+     → Compara ano_anterior vs ano_anterior-1
+     → Exibe aviso visual amarelo no dashboard.
+   - Essa lógica é tratada no Python (gerar_despesa.py), não no SQL.
+
+9. IDENTIDADE VISUAL
+   - Usar o brasão do DF contido em tools/Brasão_do_Distrito_Federal_Brasil.png
+   - Cabeçalho:
+     "Governo do Distrito Federal — Secretaria de Estado de Economia"
+     "Contadoria Geral do DF — Balanço Orçamentário — Despesa Orçamentária"
+   - Paleta: verde escuro (#006633), branco (#FFFFFF),
+     cinza escuro (#333333), cinza claro (#F5F5F5)
+   - Layout responsivo (desktop e mobile)
+   - Sidebar de filtros à esquerda, tabela à direita
+
+10. FORMATO DE VALORES
+    - Moeda brasileira: R$ com separador de milhar (.) e decimal (,)
+    - Valores negativos em vermelho
+    - Totalizadores em negrito
+
+10.1 REGRA DE EXIBIÇÃO — VALORES ZERO NO ANO ATUAL
+    - Se o valor do ano atual de qualquer linha for zero, essa linha
+      NÃO aparece na tabela. Vale para todos os níveis hierárquicos
+      (categorias, GNDs, despesas, subelementos) e para cada quadro
+      independentemente (Empenhada, Liquidada, Paga verificam seu
+      respectivo campo).
+    - Consequência: nunca haverá variação de -100%.
+    - Regra compartilhada com o dashboard de receita (ver CLAUDE.md).
+
+11. GERAÇÃO DE PDF
+    - Botão "Gerar PDF" na sidebar, abaixo dos filtros.
+    - Usa window.print() com CSS @media print:
+      → Orientação paisagem
+      → Esconde a sidebar de filtros
+      → Esconde gráficos (somente tabela no PDF)
+      → Exibe um resumo dos filtros ativos no topo do PDF
+      → Mantém brasão, cabeçalho e cores no PDF
+      → Preserva cores de fundo (print-color-adjust: exact)
+    - O usuário salva como PDF pelo diálogo do navegador.
+
+12. SAÍDAS
+    - Dashboard HTML interativo → salvar em output/despesa_orcamentaria.html
+    - PDF gerado pelo botão do dashboard (via navegador)
+    - Script gerador: gerar_despesa.py (na raiz da pasta 01_BALANÇO ORÇAMENTÁRIO)
+
+13. ARQUITETURA DO DASHBOARD
+    - Python (gerar_despesa.py): busca dados Oracle, filtra meses fechados,
+      exporta dados granulares como JSON embutido no HTML.
+    - JavaScript (embutido no HTML): faz toda a filtragem (mês, UG,
+      fonte, intra, despesa) e monta a tabela hierárquica dinamicamente.
+    - O HTML é autocontido (CSS/JS inline, brasão em base64).
+    - Compartilha db/database.py e .env com a receita.
+
+14. CARDS DE RESUMO (linha centralizada acima dos gráficos)
+    Três cards centralizados (justify-content: center) com max-width
+    280px, exibem indicadores sintéticos reativos aos filtros.
+    Valores abreviados (mi, bi, mil) para melhor leitura:
+    - DESPESA EMPENHADA: total empenhada ano atual. Subtítulo mostra ano
+      anterior e variação %.
+    - DESPESA LIQUIDADA: total liquidada ano atual. Subtítulo mostra ano
+      anterior e variação %.
+    - DESPESA PAGA: total paga ano atual. Subtítulo mostra ano anterior
+      e variação %.
+
+14.1 EXECUÇÃO TOTAL (velocímetro + gráfico de barras, lado a lado)
+    Abaixo dos 3 cards, uma div .graficos-topo exibe lado a lado:
+    - GRÁFICO DE BARRAS (esquerda, flex:1): Liquidado por GND.
+      Valores SEMPRE à direita da barra (span.bar-valor-fora), nunca
+      dentro. Top 10 GNDs por valor absoluto.
+    - VELOCÍMETRO SVG (direita, 320px): Execução = (Liquidada / Autorizada) × 100.
+      DESPESA AUTORIZADA = somatório das contas:
+        522110000–522129999 + 522150000–522159999 + 522190000–522199999
+      (classe 5, saldo = vadebito - vacredito)
+
+      Implementação SVG puro, equivalente ao gauge ECharts de referência:
+      - Arco de 260° (startAngle=140° SVG → endAngle=40° SVG, clockwise)
+      - 4 segmentos coloridos: vermelho (0-30%), laranja (30-60%),
+        verde claro (60-80%), verde escuro (80-100%)
+      - Ticks brancos separadores a cada 20% por cima do arco
+      - Ticks menores a cada 10%
+      - Labels de percentual (0%–100%) fora do arco
+      - Ponteiro (needle): triângulo SVG desenhado apontando para 0° (direita),
+        girado via animateTransform de angFromPct(0) até angFromPct(valor)
+        com duração 1.2s e easing spline (0.4 0 0.2 1)
+      - Círculo central colorido + ponto branco interno
+      - Cor do ponteiro dinâmica: vermelho <30%, laranja 30-60%,
+        verde claro 60-80%, verde escuro ≥80%
+      - Abaixo do SVG: valor numérico (ex: "20,48%") + subtítulo
+        "Autorizada: R$ XX bi"
+
+15. GRÁFICOS
+    Todos os gráficos são dinâmicos e reagem aos filtros da sidebar.
+    Gráficos NÃO aparecem na impressão/PDF (display:none no @media print).
+    - Gráfico de Barras Horizontais (dentro de .graficos-topo, ao lado
+      do velocímetro): Liquidada por GND (ano atual). Top 10 GNDs.
+      Valores sempre fora das barras (span.bar-valor-fora à direita).
+    - Treemap (acima das tabelas): Composição da Despesa Liquidada por
+      classificação de despesa (conatureza||'00'). Tamanho proporcional.
+    - Pizza 3D (abaixo do treemap): Despesa Liquidada por Função.
+      Implementação SVG com efeito 3D (elipse + polígonos laterais).
+      Sem labels no SVG — usa tabela-legenda HTML lateral com cor, nome,
+      valor (R$) e percentual. 30 cores altamente distintas (CORES_PIZZA).
+      Comportamento dinâmico: sem filtro de Função → mostra por Função;
+      com Função filtrada → mostra por Subfunção.
+    - Gráfico de Linhas (ABAIXO da tabela): Evolução Mensal da Despesa
+      Liquidada Acumulada (ano atual vs ano anterior). Linha sólida = atual,
+      tracejada = anterior. Eixo Y em milhões (M). Valores acumulados.
+
+16. CLASSIFICAÇÃO JS (funções de classificação no JavaScript)
+    O JavaScript embutido no HTML usa estas funções para separar os
+    valores por coluna a partir do cocontacontabil:
+    - isEmpenhada(r): cocontacontabil >= '622130000' && <= '622139999'
+    - isLiquidada(r): cocontacontabil === '622130300' || '622130400' || '622130700'
+    - isPaga(r):      cocontacontabil === '622920104'
+    - isAutorizada(r): cocontacontabil em 522110000-522129999 ou
+                       522150000-522159999 ou 522190000-522199999
+    - isIntra(r):     intra === '91'
+
+17. AGREGAÇÃO JS (montagem da tabela)
+    Na função aplicarFiltros(), o JS itera os registros filtrados e
+    para cada chave (categoria_economica + gnd) acumula:
+    - emp (empenhada): soma saldo onde isEmpenhada
+    - liq (liquidada): soma saldo onde isLiquidada
+    - pag (paga): soma saldo onde isPaga
+    A tabela renderiza essas 3 colunas para cada linha hierárquica.
+
+    Quando uma despesa específica é selecionada, a função
+    agregarSubelemento() agrega por subelemento separadamente
+    para cada tipo de conta. Subelementos aparecem como linhas
+    nível 3, ocultas por padrão, expansíveis via setinha (toggleSub).
+    IMPORTANTE: para Paga, subelementos usam conta 622130400
+    (não 622920104), pois esta última não carrega subelemento
+    no cocontacorrente.
+
+18. FONTE DE RECURSO (mesmo padrão da receita)
+    - Campo cofonte vem do SQL, agrupado pelos 4 primeiros dígitos.
+    - Dois JOINs com fonterecurso:
+      (1) cofonte → cofontefederal (código federal da fonte)
+      (2) fonte_agrupada || '00000' → nofonte (nome da fonte)
+    - Exibição no dropdown: "cofontefederal.fonte_agrupada — nofonte"
+    - Fontes com mesmos 4 dígitos iniciais são somadas.
+
+19. FUNÇÃO E SUBFUNÇÃO
+    O SQL traz cofuncao, nofuncao, cosubfuncao, nosubfuncao via JOINs
+    com as tabelas funcao e subfuncao. Esses campos são usados em:
+    - Filtros: dropdown Função e Subfunção (seção 8, cascading)
+    - Pizza 3D: agrupamento por Função ou Subfunção (seção 15)
+    - Códigos zero-padded: cofuncao com 2 dígitos (.str.zfill(2)),
+      cosubfuncao com 3 dígitos (.str.zfill(3)) para ordenação correta.
+    - Lista de funções: Python exporta FUNCOES_LIST separadamente para
+      uso em dropdowns (valor=cofuncao, texto="cofuncao - nofuncao").
+
+20. DIFERENÇAS EM RELAÇÃO À RECEITA
+    - Colunas: Empenhada/Liquidada/Paga (despesa) vs Realizado Atual/Anterior
+      com Variação R$/% (receita)
+    - Hierarquia: até 3 níveis — Categoria > GND > Despesa > Subelemento
+      (despesa) vs até 4 níveis — Categoria + Origem + Espécie + Tipo (receita)
+    - Intra: campo INTRA de conatureza (despesa) vs categoria_economica
+      começando em 7/8 (receita)
+    - Classificação: conatureza (despesa) vs cocontacorrente (receita)
+    - Filtro: GND + Despesa via dropdowns vinculados (despesa) vs
+      espécie dropdown (receita)
+    - Expand/collapse: por subelemento (despesa) vs por UG (receita)
+    - Sem detalhamento checkbox nem dropdown de UGs por tipo
+    - 3 quadros empilhados (despesa) vs tabela única (receita)
+
+21. DESPESAS IGNORADAS
+    As seguintes despesas são excluídas do dashboard (não aparecem na
+    tabela, nos gráficos, nos totais, nem no dropdown de filtro):
+    - 11130300
+    - 16210200
+    Exclusão aplicada em dois pontos:
+    - Python (processar_despesa): remove da lista de despesas
+    - JavaScript (aplicarFiltros): filtra dos registros antes de agregar
+
+22. NAVEGAÇÃO
+    - Botão "Índice" no canto direito do cabeçalho verde (.btn-voltar).
+      Link para index.html (página índice com botões Receita/Despesa).
+      Estilo: fundo semitransparente branco, ícone SVG seta ←, hover
+      mais claro. Escondido na impressão (display:none em @media print).
+
+23. OBSERVAÇÕES
+    - Começar simples e evoluir iterativamente.
+    - Sempre validar totais do dashboard contra o banco de dados.
+    - O dashboard será disponibilizado no site institucional.

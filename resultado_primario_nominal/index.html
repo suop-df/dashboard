@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultado Primário e Nominal — GDF 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1e293b;min-height:100vh}
+:root{
+  --radius:12px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.1);
+  --accent-900:#1b5e20;--accent-700:#006633;
+  --accent-500:#43a047;--accent-200:#c8e6c9;--accent-100:#e8f5e9;--accent-50:#f1f8e9;
+  --gradient:linear-gradient(135deg,#1b5e20 0%,#006633 40%,#2e7d32 100%);
+  --green-600:#16a34a;--green-100:#dcfce7;--green-900:#14532d;
+  --red-600:#dc2626;--red-100:#fee2e2;--red-900:#991b1b;
+}
+
+/* ═══ HEADER ═══ */
+.header{background:var(--gradient);color:#fff;padding:16px 28px;display:flex;align-items:center;gap:20px;box-shadow:var(--shadow-lg)}
+.header img{height:52px;flex-shrink:0}
+.header-titles{flex:1}
+.header-titles h1{font-size:1rem;font-weight:700;letter-spacing:.3px;line-height:1.3}
+.header-titles .subtitle{font-size:.75rem;opacity:.75;font-weight:400;margin-top:2px}
+.data-atualizacao{font-size:.7rem;opacity:.75;margin-top:4px;font-weight:400}
+.btn-voltar{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;transition:background .2s;flex-shrink:0}
+.btn-voltar:hover{background:rgba(255,255,255,.25)}
+
+/* ═══ CONTENT ═══ */
+.content{padding:20px 28px 40px}
+
+/* ═══ TOPO: SELETOR + CARDS LADO A LADO ═══ */
+.topo-row{display:flex;gap:14px;margin-bottom:16px;align-items:stretch}
+.sel-panel{background:#fff;border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);flex-shrink:0;width:190px;display:flex;flex-direction:column;gap:6px}
+.sel-label{font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;display:block}
+.mes-select{font-family:inherit;font-size:.78rem;font-weight:500;padding:3px 6px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;width:100%;flex:1}
+.mes-select:focus{border-color:var(--accent-500);outline:none}
+.sel-hint{font-size:.62rem;color:#94a3b8}
+.sel-btn-all{font-family:inherit;font-size:.68rem;font-weight:600;padding:4px 8px;border-radius:6px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;transition:all .15s}
+.sel-btn-all:hover{border-color:var(--accent-500);color:var(--accent-700);background:var(--accent-50)}
+/* Cards lado a lado */
+.kpi-col{display:flex;flex-direction:row;gap:14px;flex:1}
+.kpi-card{background:#fff;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);border-left:4px solid #cbd5e1;transition:box-shadow .2s,transform .2s;flex:1;min-width:0}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-card.surplus{border-left-color:var(--green-600)}
+.kpi-card.deficit{border-left-color:var(--red-600)}
+.kpi-label{font-size:.67rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.kpi-value{font-size:1.2rem;font-weight:800;line-height:1.1;margin-bottom:4px}
+.kpi-card.surplus .kpi-value{color:var(--green-600)}
+.kpi-card.deficit .kpi-value{color:var(--red-600)}
+.kpi-card.neutral  .kpi-value{color:#64748b}
+.kpi-badge{display:inline-block;font-size:.65rem;font-weight:700;padding:1px 8px;border-radius:4px}
+.kpi-badge.s{background:var(--green-100);color:var(--green-900)}
+.kpi-badge.d{background:var(--red-100);color:var(--red-900)}
+.kpi-sub{font-size:.67rem;color:#94a3b8;font-weight:500;margin-top:4px}
+
+/* ═══ COMPARATIVO ═══ */
+.comp-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:16px 20px;margin-bottom:20px}
+.comp-title{font-size:.8rem;font-weight:700;color:var(--accent-900);margin-bottom:12px}
+.comp-rows{display:flex;flex-direction:column;gap:8px}
+.comp-row{display:grid;grid-template-columns:110px 1fr 1fr auto;gap:10px;align-items:center}
+.comp-cenario{font-size:.72rem;font-weight:700;color:#475569}
+.comp-item{display:flex;flex-direction:column;gap:2px}
+.comp-item-label{font-size:.6rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+.comp-item-val{font-size:.82rem;font-weight:700}
+.comp-item-val.rec{color:var(--accent-700)}
+.comp-item-val.dep{color:var(--red-600)}
+.comp-res{display:flex;align-items:center;padding:7px 12px;border-radius:8px;white-space:nowrap}
+.comp-res.surplus{background:var(--green-100)}
+.comp-res.deficit{background:var(--red-100)}
+.comp-res .rl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.comp-res.surplus .rl{color:var(--green-900)}
+.comp-res.deficit .rl{color:var(--red-900)}
+.comp-res .rv{font-size:.88rem;font-weight:800}
+.comp-res.surplus .rv{color:var(--green-600)}
+.comp-res.deficit .rv{color:var(--red-600)}
+.comp-sep{border:none;border-top:1px solid #f1f5f9;margin:0}
+
+/* ═══ TABLE ═══ */
+.table-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:20px}
+.table-panel-header{padding:12px 20px;border-bottom:1px solid #f1f5f9}
+.table-panel-header h3{font-size:.82rem;font-weight:700;color:var(--accent-900)}
+.table-wrap{overflow-x:auto}
+table.dem{width:100%;border-collapse:collapse;font-size:.72rem}
+table.dem th{background:var(--accent-50);color:var(--accent-900);text-align:center;padding:7px 6px;border-bottom:2px solid var(--accent-200);font-size:.64rem;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+table.dem th.left{text-align:left;padding-left:10px}
+table.dem td{padding:4px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap}
+table.dem td.name{text-align:left;white-space:normal;min-width:280px;max-width:460px;padding-left:10px}
+table.dem td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.dem td.total{text-align:right;font-variant-numeric:tabular-nums;background:#faf5ff;font-weight:700}
+/* Previsão: mesma cor da coluna de valores (sem destaque azul) */
+table.dem td.prev{text-align:right;font-variant-numeric:tabular-nums}
+tr.n0 td{background:var(--accent-100);font-weight:700;font-size:.74rem;color:var(--accent-900)}
+tr.n1 td{background:var(--accent-50);font-weight:600;font-size:.72rem}
+tr.n2 td{font-weight:500}
+tr.n3 td{font-weight:400;color:#475569}
+tr.ded td{color:var(--red-900)}
+tr.ded.n0 td{background:var(--red-100);color:var(--red-900)}
+tr.res td{font-weight:800;font-size:.76rem}
+tr.res.surplus td{background:var(--green-100);color:var(--green-900)}
+tr.res.deficit td{background:var(--red-100);color:var(--red-900)}
+tr.juro td{font-weight:500;color:#475569}
+tr.sep td{height:4px;background:#f1f5f9;padding:0;border:none}
+tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!important}
+.ind1{padding-left:22px!important}.ind2{padding-left:38px!important}.ind3{padding-left:54px!important}
+
+/* ═══ FOOTER ═══ */
+.footer{text-align:center;padding:14px 28px;font-size:.67rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff;line-height:1.6}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:1000px){.topo-row{flex-direction:column}.kpi-col{flex-direction:row;flex-wrap:wrap}}
+@media(max-width:640px){.kpi-col{flex-direction:column}.comp-row{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.header{padding:12px 16px;flex-wrap:wrap}.content{padding:12px 16px}}
+@media print{.header{print-color-adjust:exact;-webkit-print-color-adjust:exact}.kpi-card,.comp-panel,.table-panel{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOADING ══ -->
+<div id="loading-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:sans-serif;font-size:1rem;color:#555;flex-direction:column;gap:12px">
+  <div style="font-size:2rem">&#9203;</div>
+  <div>Carregando dados&#8230;</div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <img id="brasao" alt="Bras&#227;o do DF">
+  <div class="header-titles">
+    <h1>DISTRITO FEDERAL &middot; RESULTADO PRIM&#193;RIO E NOMINAL</h1>
+    <div class="subtitle">Or&#231;amento Fiscal e da Seguridade Social &middot; Acima da Linha &middot; SEEC/SEFIN - Secretaria Executiva de Finanças, Orçamento e Planejamento</div>
+    <p class="data-atualizacao" id="data-atualizacao">Carregando dados&#8230;</p>
+  </div>
+  <a href="../" class="btn-voltar">&#8592; Voltar</a>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Seletor + KPIs na mesma linha -->
+  <div class="topo-row">
+    <div class="sel-panel">
+      <span class="sel-label">M&#234;s</span>
+      <select class="mes-select" id="fMes" multiple onchange="refresh()" size="4"></select>
+      <div class="sel-hint">Ctrl+clique para m&#250;ltipla sele&#231;&#227;o</div>
+      <button class="sel-btn-all" onclick="selectAll()">Selecionar todos</button>
+    </div>
+    <div class="kpi-col">
+      <div class="kpi-card neutral" id="kpi-xxxiv">
+        <div class="kpi-label">Resultado Prim&#225;rio (com RPPS)</div>
+        <div class="kpi-value" id="kv-xxxiv">&#8212;</div>
+        <span class="kpi-badge" id="kb-xxxiv">&nbsp;</span>
+        <div class="kpi-sub">Acima da Linha &mdash; 2026</div>
+      </div>
+      <div class="kpi-card neutral" id="kpi-xxxv">
+        <div class="kpi-label">Resultado Prim&#225;rio (sem RPPS)</div>
+        <div class="kpi-value" id="kv-xxxv">&#8212;</div>
+        <span class="kpi-badge" id="kb-xxxv">&nbsp;</span>
+        <div class="kpi-sub">Acima da Linha &mdash; 2026</div>
+      </div>
+      <div class="kpi-card neutral" id="kpi-xxxviii">
+        <div class="kpi-label">Resultado Nominal (sem RPPS)</div>
+        <div class="kpi-value" id="kv-xxxviii">&#8212;</div>
+        <span class="kpi-badge" id="kb-xxxviii">&nbsp;</span>
+        <div class="kpi-sub">Acima da Linha &mdash; 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparativo -->
+  <div class="comp-panel">
+    <div class="comp-title">Receitas Prim&#225;rias &times; Despesas Prim&#225;rias</div>
+    <div class="comp-rows">
+      <div class="comp-row">
+        <div class="comp-cenario">COM RPPS</div>
+        <div class="comp-item"><div class="comp-item-label">Receitas</div><div class="comp-item-val rec" id="cmp-rec-com">&#8212;</div></div>
+        <div class="comp-item"><div class="comp-item-label">Despesas</div><div class="comp-item-val dep" id="cmp-dep-com">&#8212;</div></div>
+        <div class="comp-res" id="cmp-res-com"><div><div class="rl">Resultado</div><div class="rv" id="cmp-rv-com">&#8212;</div></div></div>
+      </div>
+      <hr class="comp-sep">
+      <div class="comp-row">
+        <div class="comp-cenario">SEM RPPS</div>
+        <div class="comp-item"><div class="comp-item-label">Receitas</div><div class="comp-item-val rec" id="cmp-rec-sem">&#8212;</div></div>
+        <div class="comp-item"><div class="comp-item-label">Despesas</div><div class="comp-item-val dep" id="cmp-dep-sem">&#8212;</div></div>
+        <div class="comp-res" id="cmp-res-sem"><div><div class="rl">Resultado</div><div class="rv" id="cmp-rv-sem">&#8212;</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela: Receitas -->
+  <div class="table-panel">
+    <div class="table-panel-header"><h3>Receitas Prim&#225;rias</h3></div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:320px">Especifica&#231;&#227;o</th>
+            <th style="min-width:155px">Previ&#227;o Atualizada (R$)</th>
+            <th style="min-width:155px">Receitas Realizadas (R$)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-receitas"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tabela: Despesas -->
+  <div class="table-panel">
+    <div class="table-panel-header"><h3>Despesas Prim&#225;rias</h3></div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:320px">Especifica&#231;&#227;o</th>
+            <th style="min-width:120px">Pagas no Exerc&#237;cio (a)</th>
+            <th style="min-width:120px">RP Proc. Pagos (b)</th>
+            <th style="min-width:120px">RP N&#227;o-Proc. Pagos (c)</th>
+            <th style="min-width:120px;background:#e9d5ff;">Total (a+b+c)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-despesas"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tabela: Resultado Primário -->
+  <div class="table-panel">
+    <div class="table-panel-header"><h3>Resultado Prim&#225;rio</h3></div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:460px">Especifica&#231;&#227;o</th>
+            <th style="min-width:160px">Valor (R$)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-resultado"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tabela: Meta Fiscal -->
+  <div class="table-panel">
+    <div class="table-panel-header"><h3>Meta Fiscal para o Resultado Prim&#225;rio (Sem RPPS)</h3></div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:460px">Especifica&#231;&#227;o</th>
+            <th style="min-width:160px">Valor Corrente (R$)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-meta"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tabela: Juros Nominais -->
+  <div class="table-panel">
+    <div class="table-panel-header"><h3>Juros Nominais</h3></div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:460px">Especifica&#231;&#227;o</th>
+            <th style="min-width:160px">Valor Incorrido (R$)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-juros"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ FOOTER ══ -->
+<div class="footer">
+  FONTE: SIAC &mdash; Sistema Integrado de Administra&#231;&#227;o Financeira e Cont&#225;bil<br>
+  Unidade de Informa&#231;&#245;es Fiscais / Contadoria Geral do DF / SEFIN / SEEC
+</div>
+
+<script>
+var D;
+var MESES_NOME={1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtNum(v){
+  if(v==null||isNaN(v)||v===0) return '<span style="color:#cbd5e1">–</span>';
+  var abs=Math.abs(v);
+  var s=abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return v<0?'<span style="color:#ef4444">('+s+')</span>':s;
+}
+function fmtBi(v){
+  var abs=Math.abs(v),sig=v<0?'-':'';
+  if(abs>=1e9) return sig+'R$ '+(abs/1e9).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' bi';
+  if(abs>=1e6) return sig+'R$ '+(abs/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' mi';
+  return sig+'R$ '+abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function dash(){return '<span style="color:#cbd5e1">–</span>';}
+
+// ─── SELETOR ────────────────────────────────────────────────────────────────
+function setupMesSelect(){
+  var sel=document.getElementById('fMes');
+  sel.innerHTML='';
+  for(var m=1;m<=D.max_mes;m++){
+    var opt=document.createElement('option');
+    opt.value=m; opt.textContent=m+' – '+MESES_NOME[m]; sel.appendChild(opt);
+  }
+  sel.size=Math.min(D.max_mes,6);
+  selectAll();
+}
+function selectAll(){
+  var sel=document.getElementById('fMes');
+  for(var i=0;i<sel.options.length;i++) sel.options[i].selected=true;
+  refresh();
+}
+function getSelectedMeses(){
+  return Array.from(document.getElementById('fMes').selectedOptions).map(function(o){return String(o.value);});
+}
+
+// ─── COMPUTAR SNAPSHOT ──────────────────────────────────────────────────────
+function computeSnap(meses){
+  var REC=['I','II','III','V','VII','VIII','IX','X','XI','XII','XIV',
+           'icms','ipva','itcd','iptu','itbi','iss','ir','outros_impostos','taxas',
+           'contribuicoes','outras_patrimoniais',
+           'fpe','fpm','itr_trans','lc87','lc61','fundeb','outras_transf_corr',
+           'correntes_restantes',
+           'outras_alienacoes','convenios','outras_transf_cap','outras_cap_prim'];
+  var DEP=['XVIII','XIX','XXI','XXIII','XXIV','XXV','XXVI','XXVII','XXIX','XXX',
+           'pessoal','outras_correntes_dep','investimentos','demais_inv'];
+
+  var r={}; REC.forEach(function(k){r[k]=0;});
+  var d={}; DEP.forEach(function(k){d[k]=[0,0,0];});
+  var j={XXXVI:0,XXXVII:0};
+
+  meses.forEach(function(m){
+    var pm=D.por_mes[m]; if(!pm) return;
+    REC.forEach(function(k){r[k]+=(pm.rec[k]||0);});
+    DEP.forEach(function(k){for(var i=0;i<3;i++) d[k][i]+=(pm.dep[k]?pm.dep[k][i]||0:0);});
+    j.XXXVI+=(pm.jur.XXXVI||0); j.XXXVII+=(pm.jur.XXXVII||0);
+  });
+
+  // Grupos calculados — receitas
+  var IV    = r.I - r.II - r.III;
+  var XIII  = r.VII - (r.VIII+r.IX+r.X+r.XI+r.XII);
+  var XVI   = IV + r.V + XIII + r.XIV;
+  var XVII  = IV + XIII;
+  // grupos de nível 1
+  var gr_impostos   = r.icms+r.ipva+r.itcd+r.iptu+r.itbi+r.iss+r.ir+r.outros_impostos+r.taxas;
+  var gr_patrimonial= r.II + r.outras_patrimoniais;
+  var gr_transf_corr= r.fpe+r.fpm+r.itr_trans+(r.lc87||0)+r.lc61+r.fundeb+r.outras_transf_corr;
+  var gr_demais_corr= r.III + r.correntes_restantes;
+  var gr_alienacao  = r.X + r.XI + r.outras_alienacoes;
+  var gr_transf_cap = r.convenios + r.outras_transf_cap;
+  var gr_outras_cap = r.XII + r.outras_cap_prim;
+
+  // Grupos calculados — despesas
+  function sub3(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+  function add3(arrs){
+    return [
+      arrs.reduce(function(s,a){return s+a[0];},0),
+      arrs.reduce(function(s,a){return s+a[1];},0),
+      arrs.reduce(function(s,a){return s+a[2];},0)
+    ];
+  }
+  function sum3(a){return a[0]+a[1]+a[2];}
+  function fmt3(a){return {a:a[0],b:a[1],c:a[2],total:sum3(a)};}
+
+  var XX     = sub3(d.XVIII, d.XIX);
+  var XXVIII = sub3(d.XXIII, add3([d.XXIV,d.XXV,d.XXVI,d.XXVII]));
+  var XXXII  = add3([XX,d.XXI,XXVIII,d.XXIX,d.XXX]);
+  var XXXIII = add3([XX,XXVIII,d.XXIX]);
+
+  // Grupos de nível 1 (despesas)
+  var gr_inv_fin = add3([d.XXIV,d.XXV,d.XXVI,d.demais_inv]);
+
+  var XXXIV   = XVI  - sum3(XXXII);
+  var XXXV    = XVII - sum3(XXXIII);
+  var XXXVIII = XXXV + (j.XXXVI - j.XXXVII);
+
+  return {
+    r:r, j:j,
+    gr:{
+      impostos:gr_impostos, patrimonial:gr_patrimonial,
+      transf_corr:gr_transf_corr, demais_corr:gr_demais_corr,
+      alienacao:gr_alienacao, transf_cap:gr_transf_cap, outras_cap:gr_outras_cap,
+      gr_inv_fin:gr_inv_fin,
+      IV:IV, XIII:XIII, XVI:XVI, XVII:XVII
+    },
+    dep:{
+      XVIII:fmt3(d.XVIII), XIX:fmt3(d.XIX), XX:fmt3(XX),
+      XXI:fmt3(d.XXI), XXIII:fmt3(d.XXIII), XXIV:fmt3(d.XXIV),
+      XXV:fmt3(d.XXV), XXVI:fmt3(d.XXVI), XXVII:fmt3(d.XXVII),
+      XXVIII:fmt3(XXVIII), XXIX:fmt3(d.XXIX), XXX:fmt3(d.XXX),
+      XXXII:fmt3(XXXII), XXXIII:fmt3(XXXIII),
+      pessoal:fmt3(d.pessoal), outras_corr:fmt3(d.outras_correntes_dep),
+      invest:fmt3(d.investimentos), demais_inv:fmt3(d.demais_inv),
+      inv_fin:fmt3(gr_inv_fin)
+    },
+    res:{XXXIV:XXXIV,XXXV:XXXV,XXXVIII:XXXVIII}
+  };
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+function refresh(){
+  var snap=computeSnap(getSelectedMeses());
+  renderKPIs(snap);
+  renderComparativo(snap);
+  renderReceitas(snap);
+  renderDespesas(snap);
+  renderResultado(snap);
+  renderMeta();
+  renderJuros(snap);
+}
+
+function renderKPIs(snap){
+  [['xxxiv','XXXIV'],['xxxv','XXXV'],['xxxviii','XXXVIII']].forEach(function(p){
+    var id=p[0],key=p[1],v=snap.res[key]||0;
+    var card=document.getElementById('kpi-'+id);
+    card.classList.remove('surplus','deficit','neutral');
+    card.classList.add(v>0?'surplus':v<0?'deficit':'neutral');
+    document.getElementById('kv-'+id).textContent=fmtBi(v);
+    var badge=document.getElementById('kb-'+id);
+    if(v>0){badge.textContent='Superávit';badge.className='kpi-badge s';}
+    else if(v<0){badge.textContent='Déficit';badge.className='kpi-badge d';}
+    else{badge.textContent='—';badge.className='kpi-badge';}
+  });
+}
+
+function renderComparativo(snap){
+  var XVI=snap.gr.XVI,XVII=snap.gr.XVII;
+  var T32=snap.dep.XXXII.total||0, T33=snap.dep.XXXIII.total||0;
+  var R34=snap.res.XXXIV||0, R35=snap.res.XXXV||0;
+  document.getElementById('cmp-rec-com').textContent=fmtBi(XVI);
+  document.getElementById('cmp-dep-com').textContent=fmtBi(T32);
+  document.getElementById('cmp-rv-com').textContent=fmtBi(R34);
+  document.getElementById('cmp-res-com').className='comp-res '+(R34>=0?'surplus':'deficit');
+  document.getElementById('cmp-rec-sem').textContent=fmtBi(XVII);
+  document.getElementById('cmp-dep-sem').textContent=fmtBi(T33);
+  document.getElementById('cmp-rv-sem').textContent=fmtBi(R35);
+  document.getElementById('cmp-res-sem').className='comp-res '+(R35>=0?'surplus':'deficit');
+}
+
+// ─── TABELA RECEITAS ────────────────────────────────────────────────────────
+// rk=chave em snap.r | gk=chave em snap.gr | pk=chave em D.previsao
+var ROWS_REC=[
+  {n:'Receitas Correntes (Exceto Fontes RPPS)',l:'I',cls:'n0',rk:'I',pk:'I'},
+  {n:'Impostos, Taxas e Contribuições de Melhoria',cls:'n1',ind:'ind1',gk:'impostos'},
+  {n:'ICMS',             cls:'n2',ind:'ind2',rk:'icms',pk:'icms'},
+  {n:'IPVA',             cls:'n2',ind:'ind2',rk:'ipva',pk:'ipva'},
+  {n:'ITCD',             cls:'n2',ind:'ind2',rk:'itcd',pk:'itcd'},
+  {n:'IPTU',             cls:'n2',ind:'ind2',rk:'iptu',pk:'iptu'},
+  {n:'ISS',              cls:'n2',ind:'ind2',rk:'iss',pk:'iss'},
+  {n:'ITBI',             cls:'n2',ind:'ind2',rk:'itbi',pk:'itbi'},
+  {n:'Imposto sobre a Renda e Proventos de Qualquer Natureza',cls:'n2',ind:'ind2',rk:'ir',pk:'ir'},
+  {n:'Outros Impostos',  cls:'n2',ind:'ind2',rk:'outros_impostos',pk:'outros_impostos'},
+  {n:'Taxas',            cls:'n2',ind:'ind2',rk:'taxas',pk:'taxas'},
+  {n:'Contribuições',    cls:'n1',ind:'ind1',rk:'contribuicoes',pk:'contribuicoes'},
+  {n:'Receita Patrimonial',cls:'n1',ind:'ind1',gk:'patrimonial'},
+  {n:'Aplicações Financeiras',l:'II',cls:'n2',ind:'ind2',rk:'II',pk:'II',ded:1},
+  {n:'Outras Receitas Patrimoniais',cls:'n2',ind:'ind2',rk:'outras_patrimoniais',pk:'outras_patrimoniais'},
+  {n:'Transferências Correntes',cls:'n1',ind:'ind1',gk:'transf_corr'},
+  {n:'Cota-Parte do FPE',cls:'n2',ind:'ind2',rk:'fpe',pk:'fpe'},
+  {n:'Cota-Parte do FPM',cls:'n2',ind:'ind2',rk:'fpm',pk:'fpm'},
+  {n:'Cota-Parte do ITR',cls:'n2',ind:'ind2',rk:'itr_trans',pk:'itr_trans'},
+  {n:'Transferências da LC 87/1996',cls:'n2',ind:'ind2'},
+  {n:'Transferências da LC 61/1989',cls:'n2',ind:'ind2',rk:'lc61',pk:'lc61'},
+  {n:'Transferências do FUNDEB',cls:'n2',ind:'ind2',rk:'fundeb',pk:'fundeb'},
+  {n:'Outras Transferências Correntes',cls:'n2',ind:'ind2',rk:'outras_transf_corr',pk:'outras_transf_corr'},
+  {n:'Demais Receitas Correntes',cls:'n1',ind:'ind1',gk:'demais_corr'},
+  {n:'Outras Receitas Financeiras',l:'III',cls:'n2',ind:'ind2',rk:'III',pk:'III',ded:1},
+  {n:'Receitas Correntes Restantes',cls:'n2',ind:'ind2',rk:'correntes_restantes',pk:'correntes_restantes'},
+  {sep:1},
+  {n:'Receitas Primárias Correntes (Exceto Fontes RPPS)',l:'IV',cls:'n0',gk:'IV',pk:'IV'},
+  {n:'Receitas Primárias Correntes (Com Fontes RPPS)',l:'V',cls:'n0',rk:'V',pk:'V'},
+  {n:'Receitas Não Primárias Correntes (Com Fontes RPPS)',l:'VI',cls:'n0',ded:1},
+  {sep:1},
+  {n:'Receitas de Capital (Exceto Fontes RPPS)',l:'VII',cls:'n0',rk:'VII',pk:'VII'},
+  {n:'Operações de Crédito',l:'VIII',cls:'n1',ind:'ind1',rk:'VIII',pk:'VIII',ded:1},
+  {n:'Amortização de Empréstimos',l:'IX',cls:'n1',ind:'ind1',rk:'IX',pk:'IX',ded:1},
+  {n:'Alienação de Bens',cls:'n1',ind:'ind1',gk:'alienacao'},
+  {n:'Receitas de Alienação de Investimentos Temporários',l:'X',cls:'n2',ind:'ind2',rk:'X',pk:'X',ded:1},
+  {n:'Receitas de Alienação de Investimentos Permanentes',l:'XI',cls:'n2',ind:'ind2',rk:'XI',pk:'XI',ded:1},
+  {n:'Outras Alienações de Bens',cls:'n2',ind:'ind2',rk:'outras_alienacoes',pk:'outras_alienacoes'},
+  {n:'Transferências de Capital',cls:'n1',ind:'ind1',gk:'transf_cap'},
+  {n:'Convênios',cls:'n2',ind:'ind2',rk:'convenios',pk:'convenios'},
+  {n:'Outras Transferências de Capital',cls:'n2',ind:'ind2',rk:'outras_transf_cap',pk:'outras_transf_cap'},
+  {n:'Outras Receitas de Capital',cls:'n1',ind:'ind1',gk:'outras_cap'},
+  {n:'Outras Receitas de Capital Não Primárias',l:'XII',cls:'n2',ind:'ind2',rk:'XII',pk:'XII',ded:1},
+  {n:'Outras Receitas de Capital Primárias',cls:'n2',ind:'ind2',rk:'outras_cap_prim',pk:'outras_cap_prim'},
+  {sep:1},
+  {n:'Receitas Primárias de Capital (Exceto Fontes RPPS)',l:'XIII',cls:'n0',gk:'XIII',pk:'XIII'},
+  {n:'Receitas Primárias de Capital (Com Fontes RPPS)',l:'XIV',cls:'n0',rk:'XIV',pk:'XIV'},
+  {n:'Receitas Não Primárias de Capital (Com Fontes RPPS)',l:'XV',cls:'n0',ded:1},
+  {sep:1},
+  {n:'Receita Primária Total',l:'XVI',cls:'n0',gk:'XVI',pk:'XVI'},
+  {n:'Receita Primária Total (Exceto Fontes RPPS)',l:'XVII',cls:'n0',gk:'XVII',pk:'XVII'},
+];
+
+function renderReceitas(snap){
+  var prev=D.previsao;
+  var frags=[];
+  ROWS_REC.forEach(function(r){
+    if(r.sep){frags.push('<tr class="sep"><td colspan="3"></td></tr>');return;}
+    var nome=r.n+(r.l?' ('+r.l+')':'');
+    var ind=r.ind?' '+r.ind:'';
+    var dc=r.ded?' ded':'';
+    var pv,rv;
+    if(r.pk!=null)      pv=fmtNum(prev[r.pk]||0); else pv=dash();
+    if(r.rk!=null)      rv=fmtNum(snap.r[r.rk]||0);
+    else if(r.gk!=null) rv=fmtNum(snap.gr[r.gk]||0);
+    else                rv=dash();
+    // previsão: grupos calculados
+    if(r.gk!=null&&r.pk==null){
+      var gkPrev=r.gk;
+      if(gkPrev==='IV')       pv=fmtNum(prev['IV']||0);
+      else if(gkPrev==='XIII')pv=fmtNum(prev['XIII']||0);
+      else if(gkPrev==='XVI') pv=fmtNum(prev['XVI']||0);
+      else if(gkPrev==='XVII')pv=fmtNum(prev['XVII']||0);
+      else {
+        // grupos sem previsão detalhada: somar subchaves
+        var gmap={
+          impostos:['icms','ipva','itcd','iptu','itbi','iss','ir','outros_impostos','taxas'],
+          patrimonial:['II','outras_patrimoniais'],
+          transf_corr:['fpe','fpm','itr_trans','lc87','lc61','fundeb','outras_transf_corr'],
+          demais_corr:['III','correntes_restantes'],
+          alienacao:['X','XI','outras_alienacoes'],
+          transf_cap:['convenios','outras_transf_cap'],
+          outras_cap:['XII','outras_cap_prim']
+        };
+        var keys=gmap[gkPrev];
+        if(keys){
+          var s=keys.reduce(function(acc,k){return acc+(prev[k]||0);},0);
+          pv=fmtNum(s);
+        } else pv=dash();
+      }
+    }
+    frags.push('<tr class="'+r.cls+dc+'"><td class="name'+ind+'">'+escHtml(nome)+'</td><td class="prev">'+pv+'</td><td class="num">'+rv+'</td></tr>');
+  });
+  document.getElementById('tbl-receitas').innerHTML=frags.join('');
+}
+
+// ─── TABELA DESPESAS ────────────────────────────────────────────────────────
+var ROWS_DEP=[
+  {n:'Despesas Correntes (Exceto Fontes RPPS)',l:'XVIII',cls:'n0',dk:'XVIII'},
+  {n:'Pessoal e Encargos Sociais',             cls:'n1',ind:'ind1',dk:'pessoal'},
+  {n:'Juros e Encargos da Dívida',  l:'XIX',   cls:'n1',ind:'ind1',dk:'XIX',ded:1},
+  {n:'Outras Despesas Correntes',              cls:'n1',ind:'ind1',dk:'outras_corr'},
+  {sep:1},
+  {n:'Despesas Primárias Correntes (Exceto Fontes RPPS)',l:'XX', cls:'n0',dk:'XX'},
+  {n:'Despesas Primárias Correntes (Com Fontes RPPS)',   l:'XXI',cls:'n0',dk:'XXI'},
+  {n:'Despesas Não Primárias Correntes (Com Fontes RPPS)',l:'XXII',cls:'n0',ded:1},
+  {sep:1},
+  {n:'Despesas de Capital (Exceto Fontes RPPS)',l:'XXIII',cls:'n0',dk:'XXIII'},
+  {n:'Investimentos',                          cls:'n1',ind:'ind1',dk:'invest'},
+  {n:'Inversões Financeiras',                  cls:'n1',ind:'ind1',dk:'inv_fin'},
+  {n:'Concessão de Empréstimos e Financiamentos',l:'XXIV',cls:'n2',ind:'ind2',dk:'XXIV',ded:1},
+  {n:'Aquisição de Título de Capital já Integralizado',l:'XXV',cls:'n2',ind:'ind2',dk:'XXV',ded:1},
+  {n:'Aquisição de Título de Crédito',          l:'XXVI',cls:'n2',ind:'ind2',dk:'XXVI',ded:1},
+  {n:'Demais Inversões Financeiras',            cls:'n2',ind:'ind2',dk:'demais_inv'},
+  {n:'Amortização da Dívida',          l:'XXVII',cls:'n1',ind:'ind1',dk:'XXVII',ded:1},
+  {sep:1},
+  {n:'Despesas Primárias de Capital (Exceto Fontes RPPS)',l:'XXVIII',cls:'n0',dk:'XXVIII'},
+  {n:'Reserva de Contingência',                l:'XXIX', cls:'n0',dk:'XXIX'},
+  {n:'Despesas Primárias de Capital (Com Fontes RPPS)',  l:'XXX',  cls:'n0',dk:'XXX'},
+  {n:'Despesas Não Primárias de Capital (Com Fontes RPPS)',l:'XXXI',cls:'n0',ded:1},
+  {sep:1},
+  {n:'Despesa Primária Total',                  l:'XXXII', cls:'n0',dk:'XXXII'},
+  {n:'Despesa Primária Total (Exceto Fontes RPPS)',l:'XXXIII',cls:'n0',dk:'XXXIII'},
+];
+
+function renderDespesas(snap){
+  var frags=[];
+  ROWS_DEP.forEach(function(r){
+    if(r.sep){frags.push('<tr class="sep"><td colspan="5"></td></tr>');return;}
+    var nome=r.n+(r.l?' ('+r.l+')':'');
+    var ind=r.ind?' '+r.ind:'';
+    var dc=r.ded?' ded':'';
+    var cols;
+    if(r.dk!=null){
+      var dv=snap.dep[r.dk]||{a:0,b:0,c:0,total:0};
+      cols='<td class="num">'+fmtNum(dv.a)+'</td><td class="num">'+fmtNum(dv.b)+'</td><td class="num">'+fmtNum(dv.c)+'</td><td class="total">'+fmtNum(dv.total)+'</td>';
+    } else {
+      cols='<td class="num">'+dash()+'</td><td class="num">'+dash()+'</td><td class="num">'+dash()+'</td><td class="total">'+dash()+'</td>';
+    }
+    frags.push('<tr class="'+r.cls+dc+'"><td class="name'+ind+'">'+escHtml(nome)+'</td>'+cols+'</tr>');
+  });
+  document.getElementById('tbl-despesas').innerHTML=frags.join('');
+}
+
+// ─── TABELA RESULTADO PRIMÁRIO ──────────────────────────────────────────────
+function renderResultado(snap){
+  function resRow(n,l,v){
+    var cls='res '+(v>0?'surplus':v<0?'deficit':'');
+    return '<tr class="'+cls+'"><td class="name">'+escHtml(n+' ('+l+')')+'</td><td class="num">'+fmtNum(v)+'</td></tr>';
+  }
+  document.getElementById('tbl-resultado').innerHTML=[
+    resRow('Resultado Primário (Com RPPS) — Acima da Linha','XXXIV',snap.res.XXXIV||0),
+    resRow('Resultado Primário (Sem RPPS) — Acima da Linha','XXXV', snap.res.XXXV||0),
+  ].join('');
+}
+
+// ─── TABELA META FISCAL ──────────────────────────────────────────────────────
+function renderMeta(){
+  var META = -1544981949.40;
+  var cls  = 'n2';
+  document.getElementById('tbl-meta').innerHTML=
+    '<tr class="'+cls+'"><td class="name">Meta fixada no Anexo de Metas Fiscais da LDO para o exercício de 2026</td>'
+    +'<td class="num">'+fmtNum(META)+'</td></tr>';
+}
+
+// ─── TABELA JUROS NOMINAIS ───────────────────────────────────────────────────
+function renderJuros(snap){
+  function jurRow(n,l,v,ded){
+    return '<tr class="juro'+(ded?' ded':'')+'"><td class="name ind1">'+escHtml(n+' ('+l+')')+'</td><td class="num">'+fmtNum(v)+'</td></tr>';
+  }
+  function resRow(n,l,v){
+    var cls='res '+(v>0?'surplus':v<0?'deficit':'');
+    return '<tr class="'+cls+'"><td class="name">'+escHtml(n+' ('+l+')')+'</td><td class="num">'+fmtNum(v)+'</td></tr>';
+  }
+  var sep='<tr class="sep"><td colspan="2"></td></tr>';
+  document.getElementById('tbl-juros').innerHTML=[
+    jurRow('Juros, Encargos e Variações Monetárias Ativos (Exceto RPPS)',  'XXXVI',  snap.j.XXXVI||0,  false),
+    jurRow('Juros, Encargos e Variações Monetárias Passivos (Exceto RPPS)','XXXVII', snap.j.XXXVII||0, true),
+    sep,
+    resRow('Resultado Nominal (Sem RPPS) — Acima da Linha','XXXVIII',snap.res.XXXVIII||0),
+  ].join('');
+}
+
+// ─── FETCH & INIT ────────────────────────────────────────────────────────────
+(function(){
+  var img=document.getElementById('brasao');
+  img.src='../tools/Bras%C3%A3o_do_Distrito_Federal_Brasil.png';
+  img.onerror=function(){img.style.display='none';};
+  var overlay=document.getElementById('loading-overlay');
+
+  function fetchJsonGz(url){
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      var ds=new DecompressionStream('gzip');
+      return new Response(r.body.pipeThrough(ds)).text();
+    }).then(function(t){return JSON.parse(t);});
+  }
+
+  var SUPA_URL='https://otrlwfdtdrqpynemoexj.supabase.co';
+  var SUPA_KEY='sb_publishable_UKK5VWsrCXd1_zRR8tP16g_vySXJN5a';
+  function fetchSupabase(){
+    var ano=new Date().getFullYear();
+    return fetch(SUPA_URL+'/rest/v1/resultado_primario_nominal?select=dados,atualizado_em&ano=eq.'+ano,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    }).then(function(r){
+      if(!r.ok) throw new Error('Supabase HTTP '+r.status);
+      return r.json();
+    }).then(function(rows){
+      if(!rows||!rows.length) throw new Error('Supabase: nenhum dado para '+ano);
+      var json=rows[0].dados;
+      json.atualizado_em=rows[0].atualizado_em;
+      return json;
+    });
+  }
+
+  function init(json){
+    D=json;
+    overlay.style.display='none';
+    var el=document.getElementById('data-atualizacao');
+    if(el&&json.atualizado_em){
+      var d=new Date(json.atualizado_em);
+      el.textContent='Dados atualizados em: '+d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+    }
+    setupMesSelect();
+  }
+
+  fetchJsonGz('../data/gz/resultado_primario_nominal.json.gz?v='+new Date().toISOString().slice(0,10))
+    .catch(function(){return fetchSupabase();})
+    .then(init)
+    .catch(function(err){
+      overlay.innerHTML='<div style="font-size:2rem">&#9888;&#65039;</div><div style="max-width:360px;text-align:center">Erro ao carregar dados: '+escHtml(err.message)+'</div>';
+    });
+})();
+</script>
+</body>
+</html>

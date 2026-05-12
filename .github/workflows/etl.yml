@@ -1,0 +1,54 @@
+name: ETL Oracle - JSON
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  etl:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout do repositorio
+        uses: actions/checkout@v4
+      - name: Instalar dependencias Python
+        run: py -m pip install -r requirements.txt
+      - name: Rodar ETL
+        env:
+          DB_USER:                  ${{ secrets.DB_USER }}
+          DB_PASSWORD:              ${{ secrets.DB_PASSWORD }}
+          DB_DSN:                   ${{ secrets.DB_DSN }}
+          DB_MIN_CONNECTIONS:       ${{ secrets.DB_MIN_CONNECTIONS }}
+          DB_MAX_CONNECTIONS:       ${{ secrets.DB_MAX_CONNECTIONS }}
+          DB_INCREMENT_CONNECTIONS: ${{ secrets.DB_INCREMENT_CONNECTIONS }}
+          ORACLE_CLIENT_PATH:       ${{ secrets.ORACLE_CLIENT_PATH }}
+          FCDF_PATH:                ${{ secrets.FCDF_PATH }}
+          SUPABASE_URL:             ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:             ${{ secrets.SUPABASE_KEY }}
+        run: py etl.py
+      - name: Commitar JSON.GZ no repositorio
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Write-Host "Arquivos gerados em data/gz/"
+          Get-ChildItem data\gz\ -ErrorAction SilentlyContinue | Format-Table Name, Length
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:$env:GITHUB_TOKEN@github.com/$env:GITHUB_REPOSITORY.git"
+          git add data/gz/
+          git diff --staged --quiet
+          if ($LASTEXITCODE -ne 0) {
+            $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm UTC')
+            $lastMsg = git log -1 --format="%s"
+            if ($lastMsg -like "chore: atualiza dados*") {
+              # Emenda o commit anterior — não acumula histórico de dados
+              git commit --amend -m "chore: atualiza dados ETL $date"
+              git push --force origin main
+            } else {
+              # Primeiro commit de dados após mudança de código — cria normalmente
+              git commit -m "chore: atualiza dados ETL $date"
+              git push origin main
+            }
+            Write-Host "Push concluido."
+          } else {
+            Write-Host "Sem alteracoes para commitar."
+          }
